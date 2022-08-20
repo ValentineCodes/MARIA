@@ -30,7 +30,7 @@ library DiamondBaseStorage {
     bytes32 constant CLEAR_SELECTOR_MASK = bytes32(uint256(0xffffffff << 224));
 
     bytes32 internal constant STORAGE_SLOT =
-        keccak256("solidstate.contracts.storage.DiamondBase");
+        keccak256("maria.contracts.storage.DiamondBase");
 
     event DiamondCut(
         IDiamondWritable.FacetCut[] facetCuts,
@@ -57,7 +57,8 @@ library DiamondBaseStorage {
      */
     function setUpdateTimestamps(Layout storage l) internal {
 
-        require(block.timestamp > l.updateEndTimestamp, "MARIA: Cannot set update timestamps before current time ends.");
+        uint32 blockTimestamp = uint32(block.timestamp % 2**32);
+        require(blockTimestamp > l.updateEndTimestamp, "MARIA: Cannot set update timestamps before current time ends.");
 
         uint256 nextUpdateStartTimestamp = block.timestamp + 30 days;
 
@@ -81,8 +82,8 @@ library DiamondBaseStorage {
         bytes memory data
     ) internal {
         unchecked {
-
-            require(block.timestamp >= l.updateStartTimestamp && block.timestamp < l.updateEndTimestamp, "MARIA: Update time not reached.");
+            uint32 blockTimestamp = uint32(block.timestamp % 2**32);
+            require(blockTimestamp >= l.updateStartTimestamp && block.timestamp < l.updateEndTimestamp, "MARIA: Update time not reached.");
 
             uint256 originalSelectorCount = l.selectorCount;
             uint256 selectorCount = originalSelectorCount;
