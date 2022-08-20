@@ -19,8 +19,6 @@ abstract contract DiamondWritable is IDiamondWritable, OwnableInternal {
      */
 
     function setUpdateTimestamps() external onlyOwner {
-        if(block.timestamp >= DiamondBaseStorage.layout().updateEndTimestamp) {revert UpdateDisabled()}
-
         DiamondBaseStorage.layout().setUpdateTimestamps();
     }
 
@@ -29,10 +27,6 @@ abstract contract DiamondWritable is IDiamondWritable, OwnableInternal {
         address target,
         bytes calldata data
     ) external onlyOwner {
-         DiamondBaseStorage.Layout memory l = DiamondBaseStorage.layout();
-
-        if(block.timestamp < l.updateStartTimestamp || block.timestamp >= l.updateEndTimestamp) {revert UpdateDisabled()}
-
         DiamondBaseStorage.layout().diamondCut(facetCuts, target, data);
     }
 }

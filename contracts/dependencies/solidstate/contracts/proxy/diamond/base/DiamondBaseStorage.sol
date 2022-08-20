@@ -56,6 +56,9 @@ library DiamondBaseStorage {
      * @param l storage layout
      */
     function setUpdateTimestamps(Layout storage l) internal {
+
+        require(block.timestamp > l.updateEndTimestamp, "MARIA: Cannot set update timestamps before current time ends.");
+
         uint256 nextUpdateStartTimestamp = block.timestamp + 30 days;
 
         l.updateStartTimestamp = nextUpdateStartTimestamp;
@@ -78,6 +81,9 @@ library DiamondBaseStorage {
         bytes memory data
     ) internal {
         unchecked {
+
+            require(block.timestamp >= l.updateStartTimestamp && block.timestamp < l.updateEndTimestamp, "MARIA: Update time not reached.");
+
             uint256 originalSelectorCount = l.selectorCount;
             uint256 selectorCount = originalSelectorCount;
             bytes32 selectorSlot;
