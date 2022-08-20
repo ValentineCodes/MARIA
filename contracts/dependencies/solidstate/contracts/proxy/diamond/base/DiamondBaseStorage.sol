@@ -50,9 +50,10 @@ library DiamondBaseStorage {
         }
     }
 
+
      /**
-     * @notice sets the start and end timestamps for diamond updates
-     * @dev Should be called after update end timestamp
+     * @notice Enables updates 30 days after function call for 24 hours only
+     * @notice Emits an event for tracking
      * @param l storage layout
      */
     function setUpdateTimestamps(Layout storage l) internal {
