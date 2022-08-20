@@ -79,12 +79,8 @@ abstract contract SolidStateDiamond is
         DiamondBaseStorage.layout().diamondCut(facetCuts, address(0), "");
 
         // Initialize update timestamps
-        uint256 nextUpdateTimestamp = block.timestamp + 30 days;
 
-        DiamondBaseStorage.layout().updateStartTimestamp = nextUpdateTimestamp;
-        DiamondBaseStorage.layout().updateEndTimestamp =
-            nextUpdateTimestamp +
-            24 hours;
+        DiamondBaseStorage.layout().setUpdateTimestamps();
 
         // set owner
 
