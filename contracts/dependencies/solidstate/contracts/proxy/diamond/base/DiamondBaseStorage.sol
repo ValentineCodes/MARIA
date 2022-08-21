@@ -2,8 +2,8 @@
 
 pragma solidity ^0.8.8;
 
-import {AddressUtils} from "../../../utils/AddressUtils.sol";
-import {IDiamondWritable} from "../writable/IDiamondWritable.sol";
+import { AddressUtils } from '../../../utils/AddressUtils.sol';
+import { IDiamondWritable } from '../writable/IDiamondWritable.sol';
 
 /**
  * @dev derived from https://github.com/mudgen/diamond-2 (MIT license)
@@ -20,9 +20,9 @@ library DiamondBaseStorage {
         // array of selector slots with 8 selectors per slot
         mapping(uint256 => bytes32) selectorSlots;
         address fallbackAddress;
-        // Start and End time of updates => 24hours difference
-        uint256 updateStartTimestamp;
-        uint256 updateEndTimestamp;
+        // Start and End time of upgrades => 24 hours difference
+        uint256 upgradeStartTimestamp;
+        uint256 upgradeEndTimestamp;
     }
 
     bytes32 constant CLEAR_ADDRESS_MASK =
@@ -30,20 +30,20 @@ library DiamondBaseStorage {
     bytes32 constant CLEAR_SELECTOR_MASK = bytes32(uint256(0xffffffff << 224));
 
     bytes32 internal constant STORAGE_SLOT =
-        keccak256("maria.contracts.storage.DiamondBase");
-
-    uint256 constant SECONDS_BEFORE_UPDATE_ENABLED = 30 days;
-    uint256 constant SECONDS_UPDATE_ENABLED = 24 hours;
+        keccak256('solidstate.contracts.storage.DiamondBase');
+        
+    uint256 constant SECONDS_BEFORE_UPGRADE_ENABLED = 30 days;
+    uint256 constant SECONDS_UPGRADE_ENABLED = 24 hours;
 
     event DiamondCut(
         IDiamondWritable.FacetCut[] facetCuts,
         address target,
         bytes data
     );
-
-    event UpdatedTimestamps(
-        uint256 updateStartTimestamp;
-        uint256 updateEndTimestamp;
+    
+    event UpdatedUpgradeTimestamps(
+        uint256 upgradeStartTimestamp;
+        uint256 upgradeEndTimestamp;
     )
 
     function layout() internal pure returns (Layout storage l) {
@@ -52,23 +52,22 @@ library DiamondBaseStorage {
             l.slot := slot
         }
     }
-
-
+    
      /**
-     * @notice Enables updates after 30 days for 24 hours only
+     * @notice Enables upgrades after 30 days for 24 hours only
      * @notice Emits an event for tracking
      * @param l storage layout
      */
-    function setUpdateTimestamps(Layout storage l) internal {
+    function setUpgradeTimestamps(Layout storage l) internal {
 
-        require(block.timestamp > l.updateEndTimestamp, "MARIA: Cannot set update timestamps before current time ends.");
+        require(block.timestamp > l.upgradeEndTimestamp, "SolidState: Cannot set upgrade timestamps before current time ends.");
 
-        uint256 nextUpdateStartTimestamp = block.timestamp + SECONDS_BEFORE_UPDATE_ENABLED;
+        uint256 nextUpgradeStartTimestamp = block.timestamp + SECONDS_BEFORE_UPGRADE_ENABLED;
 
-        l.updateStartTimestamp = nextUpdateStartTimestamp;
-        l.updateEndTimestamp = nextUpdateStartTimestamp + SECONDS_UPDATE_ENABLED;
+        l.upgradeStartTimestamp = nextUpgradeStartTimestamp;
+        l.upgradeEndTimestamp = nextUpgradeStartTimestamp + SECONDS_UPGRADE_ENABLED;
 
-        emit UpdatedTimestamps(nextUpdateStartTimestamp, nextUpdateStartTimestamp + SECONDS_UPDATE_ENABLED);
+        emit UpdatedUpgradeTimestamps(nextUpgradeStartTimestamp, nextUpgradeStartTimestamp + SECONDS_UPGRADE_ENABLED);
     }
 
     /**

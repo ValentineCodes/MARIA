@@ -199,9 +199,16 @@ abstract contract DiamondReadable is IDiamondReadable {
     /**
      * @inheritdoc IDiamondReadable
      */
-    function getUpdateTimestamps() external view returns (uint256, uint256) {
+    function getUpgradeTimestamps()
+        external
+        view
+        returns (uint256 startTimestamp, uint256 endTimestamp)
+    {
         DiamondBaseStorage.Layout storage l = DiamondBaseStorage.layout();
 
-        return (l.updateStartTimestamp, l.updateEndTimestamp);
+        (startTimestamp, endTimestamp) = (
+            l.upgradeStartTimestamp,
+            l.upgradeEndTimestamp
+        );
     }
 }

@@ -33,7 +33,7 @@ abstract contract SolidStateDiamond is
         // register DiamondWritable
 
         selectors[0] = IDiamondWritable.diamondCut.selector;
-        selectors[1] = IDiamondWritable.setUpdateTimestamps.selector;
+        selectors[1] = IDiamondWritable.setUpgradeTimestamps.selector;
 
         erc165.setSupportedInterface(type(IDiamondWritable).interfaceId, true);
 
@@ -43,7 +43,7 @@ abstract contract SolidStateDiamond is
         selectors[3] = IDiamondReadable.facetFunctionSelectors.selector;
         selectors[4] = IDiamondReadable.facetAddresses.selector;
         selectors[5] = IDiamondReadable.facetAddress.selector;
-        selectors[6] = IDiamondReadable.getUpdateTimestamps.selector;
+        selectors[6] = IDiamondReadable.getUpgradeTimestamps.selector;
 
         erc165.setSupportedInterface(type(IDiamondReadable).interfaceId, true);
 

@@ -22,10 +22,10 @@ interface IDiamondWritable {
     }
 
     /**
-     * @notice sets the start and end timestamps for diamond updates
-     * @dev Should be called after update end timestamp
+     * @notice sets the start and end timestamps for diamond upgrades
+     * @dev can only be called after upgrade ends
      */
-    function setUpdateTimestamps() external;
+    function setUpgradeTimestamps() external;
 
     /**
      * @notice update diamond facets and optionally execute arbitrary initialization function

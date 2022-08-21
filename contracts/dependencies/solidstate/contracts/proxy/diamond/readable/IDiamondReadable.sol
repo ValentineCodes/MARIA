@@ -46,4 +46,11 @@ interface IDiamondReadable {
         external
         view
         returns (address facet);
+
+    /**
+     * @notice get upgrade start and end timestamps
+     * @return startTimestamp update enabled timestamp
+     * @return endTimestamp update disabled timestamp
+     */
+    function getUpgradeTimestamps() external view returns (uint256 startTimestamp, uint256 endTimestamp)
 }
