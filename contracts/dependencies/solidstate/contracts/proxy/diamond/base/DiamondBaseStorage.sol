@@ -32,6 +32,9 @@ library DiamondBaseStorage {
     bytes32 internal constant STORAGE_SLOT =
         keccak256("maria.contracts.storage.DiamondBase");
 
+    uint256 constant SECONDS_BEFORE_UPDATE_ENABLED = 30 days;
+    uint256 constant SECONDS_UPDATE_ENABLED = 24 hours;
+
     event DiamondCut(
         IDiamondWritable.FacetCut[] facetCuts,
         address target,
@@ -52,21 +55,20 @@ library DiamondBaseStorage {
 
 
      /**
-     * @notice Enables updates 30 days after function call for 24 hours only
+     * @notice Enables updates after 30 days for 24 hours only
      * @notice Emits an event for tracking
      * @param l storage layout
      */
     function setUpdateTimestamps(Layout storage l) internal {
 
-        uint32 blockTimestamp = uint32(block.timestamp % 2**32);
-        require(blockTimestamp > l.updateEndTimestamp, "MARIA: Cannot set update timestamps before current time ends.");
+        require(block.timestamp > l.updateEndTimestamp, "MARIA: Cannot set update timestamps before current time ends.");
 
-        uint256 nextUpdateStartTimestamp = block.timestamp + 30 days;
+        uint256 nextUpdateStartTimestamp = block.timestamp + SECONDS_BEFORE_UPDATE_ENABLED;
 
         l.updateStartTimestamp = nextUpdateStartTimestamp;
-        l.updateEndTimestamp = nextUpdateStartTimestamp + 24 hours;
+        l.updateEndTimestamp = nextUpdateStartTimestamp + SECONDS_UPDATE_ENABLED;
 
-        emit UpdatedTimestamps(nextUpdateStartTimestamp, nextUpdateStartTimestamp + 24 hours);
+        emit UpdatedTimestamps(nextUpdateStartTimestamp, nextUpdateStartTimestamp + SECONDS_UPDATE_ENABLED);
     }
 
     /**
@@ -83,8 +85,7 @@ library DiamondBaseStorage {
         bytes memory data
     ) internal {
         unchecked {
-            uint32 blockTimestamp = uint32(block.timestamp % 2**32);
-            require(blockTimestamp >= l.updateStartTimestamp && block.timestamp < l.updateEndTimestamp, "MARIA: Update time not reached.");
+            require(block.timestamp >= l.updateStartTimestamp && block.timestamp < l.updateEndTimestamp, "MARIA: Update time not reached.");
 
             uint256 originalSelectorCount = l.selectorCount;
             uint256 selectorCount = originalSelectorCount;

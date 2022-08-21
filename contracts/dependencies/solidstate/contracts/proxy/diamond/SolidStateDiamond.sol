@@ -28,7 +28,7 @@ abstract contract SolidStateDiamond is
 
     constructor() {
         ERC165Storage.Layout storage erc165 = ERC165Storage.layout();
-        bytes4[] memory selectors = new bytes4[](13);
+        bytes4[] memory selectors = new bytes4[](14);
 
         // register DiamondWritable
 
@@ -43,28 +43,29 @@ abstract contract SolidStateDiamond is
         selectors[3] = IDiamondReadable.facetFunctionSelectors.selector;
         selectors[4] = IDiamondReadable.facetAddresses.selector;
         selectors[5] = IDiamondReadable.facetAddress.selector;
+        selectors[6] = IDiamondReadable.getUpdateTimestamps.selector;
 
         erc165.setSupportedInterface(type(IDiamondReadable).interfaceId, true);
 
         // register ERC165
 
-        selectors[6] = IERC165.supportsInterface.selector;
+        selectors[7] = IERC165.supportsInterface.selector;
 
         erc165.setSupportedInterface(type(IERC165).interfaceId, true);
 
         // register SafeOwnable
 
-        selectors[7] = Ownable.owner.selector;
-        selectors[8] = SafeOwnable.nomineeOwner.selector;
-        selectors[9] = Ownable.transferOwnership.selector;
-        selectors[10] = SafeOwnable.acceptOwnership.selector;
+        selectors[8] = Ownable.owner.selector;
+        selectors[9] = SafeOwnable.nomineeOwner.selector;
+        selectors[10] = Ownable.transferOwnership.selector;
+        selectors[11] = SafeOwnable.acceptOwnership.selector;
 
         erc165.setSupportedInterface(type(IERC173).interfaceId, true);
 
         // register Diamond
 
-        selectors[11] = SolidStateDiamond.getFallbackAddress.selector;
-        selectors[12] = SolidStateDiamond.setFallbackAddress.selector;
+        selectors[12] = SolidStateDiamond.getFallbackAddress.selector;
+        selectors[13] = SolidStateDiamond.setFallbackAddress.selector;
 
         // diamond cut
 

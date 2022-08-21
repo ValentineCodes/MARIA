@@ -2,8 +2,8 @@
 
 pragma solidity ^0.8.8;
 
-import { DiamondBaseStorage } from '../base/DiamondBaseStorage.sol';
-import { IDiamondReadable } from './IDiamondReadable.sol';
+import {DiamondBaseStorage} from "../base/DiamondBaseStorage.sol";
+import {IDiamondReadable} from "./IDiamondReadable.sol";
 
 /**
  * @title EIP-2535 "Diamond" proxy introspection contract
@@ -194,5 +194,14 @@ abstract contract DiamondReadable is IDiamondReadable {
         returns (address facet)
     {
         facet = address(bytes20(DiamondBaseStorage.layout().facets[selector]));
+    }
+
+    /**
+     * @inheritdoc IDiamondReadable
+     */
+    function getUpdateTimestamps() external view returns (uint256, uint256) {
+        DiamondBaseStorage.Layout storage l = DiamondBaseStorage.layout();
+
+        return (l.updateStartTimestamp, l.updateEndTimestamp);
     }
 }
