@@ -2,8 +2,8 @@
 
 pragma solidity ^0.8.8;
 
-import { AddressUtils } from '../utils/AddressUtils.sol';
-import { IProxy } from './IProxy.sol';
+import {AddressUtils} from "../utils/AddressUtils.sol";
+import {IProxy} from "./IProxy.sol";
 
 /**
  * @title Base proxy contract
@@ -21,7 +21,7 @@ abstract contract Proxy is IProxy {
 
         require(
             implementation.isContract(),
-            'Proxy: implementation must be contract'
+            "Proxy: implementation must be contract"
         );
 
         assembly {
