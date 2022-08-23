@@ -18,7 +18,7 @@ library LibACLManager {
     }
 
     bytes32 internal constant STORAGE_SLOT = keccak256("aclmanager.storage");
-    bytes32 public constant DEFAULT_ADMIN_ROLE = 0x00;
+    bytes32 internal constant DEFAULT_ADMIN_ROLE = 0x00;
 
     /**
      * @dev Emitted when `newAdminRole` is set as ``role``'s admin role, replacing `previousAdminRole`
@@ -83,9 +83,7 @@ library LibACLManager {
      * @dev Can only be called in {MariaDiamond} constructor
      * @param aclAdmin The address of the ACLManager admin
      */
-    function initACLManager(ACLManagerLayout storage s, address aclAdmin)
-        internal
-    {
+    function init(ACLManagerLayout storage s, address aclAdmin) internal {
         if (aclAdmin == address(0)) {
             revert ACLManager__ACL_ADMIN_CANNOT_BE_ZERO();
         }

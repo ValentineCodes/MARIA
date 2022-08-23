@@ -15,6 +15,6 @@ contract MariaDiamond is SolidStateDiamond {
     constructor(Args calldata args) SolidStateDiamond() {
         // initialize facets
 
-        LibACLManager.layout().initACLManager(args.aclAdmin);
+        LibACLManager.layout().init(args.aclAdmin);
     }
 }
