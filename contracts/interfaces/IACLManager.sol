@@ -53,9 +53,9 @@ interface IACLManager {
 
     /**
      * @notice Sets the new access control admin
-     * @param newAclAdmin The address of the access control admin
+     * @param newAdmin The address of the access control admin
      */
-    function setACLAdmin(address newAclAdmin) external;
+    function setACLAdmin(address newAdmin) external;
 
     /**
      * @notice Returns `true` if `account` has been granted `role`.

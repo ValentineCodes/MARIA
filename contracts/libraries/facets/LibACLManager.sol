@@ -4,22 +4,11 @@ pragma solidity ^0.8.10;
 
 import {Context} from "../../dependencies/openzeppelin/contracts/Context.sol";
 import {Strings} from "../../dependencies/openzeppelin/contracts/Strings.sol";
-
-error ACLManager__ACL_ADMIN_CANNOT_BE_ZERO();
+import {LayoutTypes} from "../types/LayoutTypes.sol";
+import {Query} from "../utils/Query.sol";
+import {Errors} from "../utils/Errors.sol";
 
 library LibACLManager {
-    struct RoleData {
-        mapping(address => bool) members;
-        bytes32 adminRole;
-    }
-    struct ACLManagerLayout {
-        address aclAdmin;
-        mapping(bytes32 => RoleData) _roles;
-    }
-
-    bytes32 internal constant STORAGE_SLOT = keccak256("aclmanager.storage");
-    bytes32 internal constant DEFAULT_ADMIN_ROLE = 0x00;
-
     /**
      * @dev Emitted when `newAdminRole` is set as ``role``'s admin role, replacing `previousAdminRole`
      *
@@ -67,49 +56,76 @@ library LibACLManager {
         address indexed newAddress
     );
 
-    modifier onlyRole(ACLManagerLayout storage s, bytes32 role) {
+    bytes32 internal constant STORAGE_SLOT = keccak256("aclManager.storage");
+    bytes32 internal constant DEFAULT_ADMIN_ROLE = 0x00;
+
+    modifier initializer(LayoutTypes.ACLManagerLayout storage s) {
+        uint256 revision = 0x1;
+        require(
+            s.initializing ||
+                Query.isConstructor() ||
+                revision > s.lastInitializedRevision,
+            "Contract instance has already been initialized"
+        );
+
+        bool isTopLevelCall = !s.initializing;
+        if (isTopLevelCall) {
+            s.initializing = true;
+            s.lastInitializedRevision = revision;
+        }
+
+        _;
+
+        if (isTopLevelCall) {
+            s.initializing = false;
+        }
+    }
+
+    modifier onlyRole(LayoutTypes.ACLManagerLayout storage s, bytes32 role) {
         _checkRole(s, role, Context._msgSender());
         _;
     }
 
-    function layout() internal pure returns (ACLManagerLayout storage s) {
+    function layout()
+        internal
+        pure
+        returns (LayoutTypes.ACLManagerLayout storage s)
+    {
         bytes32 slot = STORAGE_SLOT;
         assembly {
             s.slot := slot
         }
     }
 
-    /**
-     * @dev Can only be called in {MariaDiamond} constructor
-     * @param aclAdmin The address of the ACLManager admin
-     */
-    function init(ACLManagerLayout storage s, address aclAdmin) internal {
-        if (aclAdmin == address(0)) {
-            revert ACLManager__ACL_ADMIN_CANNOT_BE_ZERO();
-        }
+    function initializeACLAdmin(
+        LayoutTypes.ACLManagerLayout storage s,
+        address admin
+    ) internal initializer(s) {
+        require(admin != address(0), Errors.ACL_ADMIN_CANNOT_BE_ZERO);
 
-        s.aclAdmin = aclAdmin;
-        _setupRole(s, DEFAULT_ADMIN_ROLE, aclAdmin);
+        s.admin = admin;
+        _setupRole(s, DEFAULT_ADMIN_ROLE, admin);
     }
 
-    function getACLAdmin(ACLManagerLayout storage s)
+    function getACLAdmin(LayoutTypes.ACLManagerLayout storage s)
         internal
         view
         returns (address)
     {
-        return s.aclAdmin;
+        return s.admin;
     }
 
-    function setACLAdmin(ACLManagerLayout storage s, address newAclAdmin)
-        internal
-    {
-        address oldAclAdmin = s.aclAdmin;
-        s.aclAdmin = newAclAdmin;
-        emit ACLAdminUpdated(oldAclAdmin, newAclAdmin);
+    function setACLAdmin(
+        LayoutTypes.ACLManagerLayout storage s,
+        address newAdmin
+    ) internal {
+        address oldAdmin = s.admin;
+        s.admin = newAdmin;
+        emit ACLAdminUpdated(oldAdmin, newAdmin);
     }
 
     function hasRole(
-        ACLManagerLayout storage s,
+        LayoutTypes.ACLManagerLayout storage s,
         bytes32 role,
         address account
     ) internal view returns (bool) {
@@ -117,7 +133,7 @@ library LibACLManager {
     }
 
     function grantRole(
-        ACLManagerLayout storage s,
+        LayoutTypes.ACLManagerLayout storage s,
         bytes32 role,
         address account
     ) internal onlyRole(s, getRoleAdmin(s, role)) {
@@ -125,7 +141,7 @@ library LibACLManager {
     }
 
     function revokeRole(
-        ACLManagerLayout storage s,
+        LayoutTypes.ACLManagerLayout storage s,
         bytes32 role,
         address account
     ) internal onlyRole(s, getRoleAdmin(s, role)) {
@@ -133,7 +149,7 @@ library LibACLManager {
     }
 
     function renounceRole(
-        ACLManagerLayout storage s,
+        LayoutTypes.ACLManagerLayout storage s,
         bytes32 role,
         address account
     ) internal {
@@ -145,7 +161,7 @@ library LibACLManager {
         _revokeRole(s, role, account);
     }
 
-    function getRoleAdmin(ACLManagerLayout storage s, bytes32 role)
+    function getRoleAdmin(LayoutTypes.ACLManagerLayout storage s, bytes32 role)
         internal
         view
         returns (bytes32)
@@ -154,7 +170,7 @@ library LibACLManager {
     }
 
     function setRoleAdmin(
-        ACLManagerLayout storage s,
+        LayoutTypes.ACLManagerLayout storage s,
         bytes32 role,
         bytes32 adminRole
     ) internal {
@@ -177,7 +193,7 @@ library LibACLManager {
      *
      */
     function _setupRole(
-        ACLManagerLayout storage s,
+        LayoutTypes.ACLManagerLayout storage s,
         bytes32 role,
         address account
     ) internal virtual {
@@ -185,7 +201,7 @@ library LibACLManager {
     }
 
     function _grantRole(
-        ACLManagerLayout storage s,
+        LayoutTypes.ACLManagerLayout storage s,
         bytes32 role,
         address account
     ) internal {
@@ -203,7 +219,7 @@ library LibACLManager {
      *  /^ACLManager: account (0x[0-9a-f]{40}) is missing role (0x[0-9a-f]{64})$/
      */
     function _checkRole(
-        ACLManagerLayout storage s,
+        LayoutTypes.ACLManagerLayout storage s,
         bytes32 role,
         address account
     ) internal view {
@@ -222,7 +238,7 @@ library LibACLManager {
     }
 
     function _revokeRole(
-        ACLManagerLayout storage s,
+        LayoutTypes.ACLManagerLayout storage s,
         bytes32 role,
         address account
     ) private {

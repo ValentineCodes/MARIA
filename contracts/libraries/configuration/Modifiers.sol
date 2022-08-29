@@ -2,7 +2,7 @@
 
 pragma solidity ^0.8.10;
 
-import {LibACLManager} from "./LibACLManager.sol";
+import {LibACLManager} from "../facets/LibACLManager.sol";
 import {Context} from "../../dependencies/openzeppelin/contracts/Context.sol";
 
 contract Modifiers {

@@ -1,9 +1,10 @@
 // SPDX-License-Identifier: BUSL-1.1
-pragma solidity 0.8.10;
+pragma solidity ^0.8.10;
 
 import {IACLManager} from "../../interfaces/IACLManager.sol";
-import {LibACLManager} from "../../libraries/configuration/LibACLManager";
+import {LibACLManager} from "../../libraries/facets/LibACLManager";
 import {OwnableInternal} from "../../dependencies/solidstate/contracts/access/ownable/OwnableInternal.sol";
+import {LayoutTypes} from "../../libraries/types/LayoutTypes.sol";
 
 /**
  * @title ACLManager
@@ -11,7 +12,7 @@ import {OwnableInternal} from "../../dependencies/solidstate/contracts/access/ow
  * @notice Access Control List Manager. Main registry of system roles and permissions.
  */
 contract ACLManager is IACLManager, OwnableInternal {
-    using LibACLManager for LibACLManager.ACLManagerLayout;
+    using LibACLManager for LayoutTypes.ACLManagerLayout;
 
     bytes32 public constant override POOL_ADMIN_ROLE = keccak256("POOL_ADMIN");
     bytes32 public constant override EMERGENCY_ADMIN_ROLE =
@@ -23,12 +24,20 @@ contract ACLManager is IACLManager, OwnableInternal {
     bytes32 public constant override ASSET_LISTING_ADMIN_ROLE =
         keccak256("ASSET_LISTING_ADMIN");
 
+    /**
+     * @dev Can only be called once by the owner
+     * @param admin The address of the ACLManager admin
+     */
+    function initializeACLAdmin(address newAdmin) external override onlyOwner {
+        LibACLManager.layout().initializeACLAdmin(newAdmin);
+    }
+
     function getACLAdmin() external view override returns (address) {
         return LibACLManager.layout().getACLAdmin();
     }
 
-    function setACLAdmin(address newAclAdmin) external override {
-        LibACLManager.layout().setACLAdmin(newAclAdmin);
+    function setACLAdmin(address newAdmin) external override {
+        LibACLManager.layout().setACLAdmin(newAdmin);
     }
 
     function hasRole(bytes32 role, address account)

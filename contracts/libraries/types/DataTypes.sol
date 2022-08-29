@@ -265,4 +265,14 @@ library DataTypes {
         uint16 reservesCount;
         uint16 maxNumberReserves;
     }
+
+    struct RoleData {
+        mapping(address => bool) members;
+        bytes32 adminRole;
+    }
+
+    struct UserState {
+        uint128 balance;
+        uint128 additionalData;
+    }
 }
