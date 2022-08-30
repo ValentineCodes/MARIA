@@ -6,7 +6,7 @@ import {LibMToken} from "../../libraries/facets/LibMToken.sol";
 import {OwnableInternal} from "../../dependencies/solidstate/contracts/access/ownable/OwnableInternal.sol";
 import {LayoutTypes} from "../../libraries/types/LayoutTypes.sol";
 import {Errors} from "../../libraries/utils/Errors.sol";
-import {Context} from "../../dependencies/openzeppelin/contracts/Context.sol";
+import {Query} from "../../libraries/utils/Query.sol";
 import {IACLManager} from "../../interfaces/IACLManager.sol";
 
 contract MToken is OwnableInternal {
@@ -30,7 +30,7 @@ contract MToken is OwnableInternal {
      **/
     modifier onlyPool() {
         require(
-            Context._msgSender() == LibMToken.layout()._mariaDiamond,
+            Query._msgSender() == LibMToken.layout()._mariaDiamond,
             Errors.CALLER_MUST_BE_POOL
         );
         _;

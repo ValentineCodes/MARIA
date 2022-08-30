@@ -8,7 +8,6 @@ import {SafeCast} from '../../dependencies/openzeppelin/contracts/SafeCast.sol';
 import {IERC20} from '../../dependencies/openzeppelin/contracts/IERC20.sol';
 import {IPool} from '../../interfaces/IPool.sol';
 import {GPv2SafeERC20} from '../../dependencies/gnosis/contracts/GPv2SafeERC20.sol';
-import {Context} from "../../dependencies/openzeppelin/contracts/Context.sol";
 import {WadRayMath} from '../math/WadRayMath.sol';
 import {Errors} from "../utils/Errors.sol";
 
@@ -197,7 +196,7 @@ library LibMToken {
     }
 
     function approve(LayoutTypes.MTokenLayout storage s, address spender, uint256 amount) internal returns (bool) {
-        _approve(s, Context._msgSender(), spender, amount);
+        _approve(s, Query._msgSender(), spender, amount);
         return true;
     }
 
@@ -219,7 +218,7 @@ library LibMToken {
 
     function transfer(LayoutTypes.MTokenLayout storage s, address recipient, uint256 amount) internal returns (bool) {
         uint128 castAmount = amount.toUint128();
-        _transfer(Context._msgSender(), recipient, castAmount);
+        _transfer(Query._msgSender(), recipient, castAmount);
         return true;
     }
 
@@ -230,7 +229,7 @@ library LibMToken {
         uint256 amount
     ) internal returns (bool) {
         uint128 castAmount = amount.toUint128();
-        _approve(s, sender, Context._msgSender(), s._allowances[sender][Context._msgSender()] - castAmount);
+        _approve(s, sender, Query._msgSender(), s._allowances[sender][Query._msgSender()] - castAmount);
         _transfer(s, sender, recipient, castAmount);
         return true;
     }
@@ -251,12 +250,12 @@ library LibMToken {
     }
 
     function increaseAllowance(LayoutTypes.MTokenLayout storage s, address spender, uint256 addedValue) internal returns (bool) {
-        _approve(s, Context._msgSender(), spender, s._allowances[Context._msgSender()][spender] + addedValue);
+        _approve(s, Query._msgSender(), spender, s._allowances[Query._msgSender()][spender] + addedValue);
         return true;
     }
 
     function decreaseAllowance(LayoutTypes.MTokenLayout storage s, address spender, uint256 subtractedValue) internal returns (bool) {
-       _approve(s, Context._msgSender(), spender, s._allowances[Context._msgSender()][spender] + subtractedValue);
+       _approve(s, Query._msgSender(), spender, s._allowances[Query._msgSender()][spender] + subtractedValue);
         return true;
     }
 

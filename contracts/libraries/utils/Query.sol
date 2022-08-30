@@ -20,4 +20,8 @@ library Query {
         }
         return cs == 0;
     }
+
+    function _msgSender() internal view returns (address payable) {
+        return payable(msg.sender);
+    }
 }

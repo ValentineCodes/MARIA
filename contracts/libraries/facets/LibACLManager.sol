@@ -2,7 +2,6 @@
 
 pragma solidity ^0.8.10;
 
-import {Context} from "../../dependencies/openzeppelin/contracts/Context.sol";
 import {Strings} from "../../dependencies/openzeppelin/contracts/Strings.sol";
 import {LayoutTypes} from "../types/LayoutTypes.sol";
 import {Query} from "../utils/Query.sol";
@@ -82,7 +81,7 @@ library LibACLManager {
     }
 
     modifier onlyRole(LayoutTypes.ACLManagerLayout storage s, bytes32 role) {
-        _checkRole(s, role, Context._msgSender());
+        _checkRole(s, role, Query._msgSender());
         _;
     }
 
@@ -154,7 +153,7 @@ library LibACLManager {
         address account
     ) internal {
         require(
-            account == Context._msgSender(),
+            account == Query._msgSender(),
             "ACLManager: can only renounce roles for self"
         );
 
@@ -207,7 +206,7 @@ library LibACLManager {
     ) internal {
         if (!hasRole(s, role, account)) {
             s._roles[role].members[account] = true;
-            emit RoleGranted(role, account, Context._msgSender());
+            emit RoleGranted(role, account, Query._msgSender());
         }
     }
 
@@ -244,7 +243,7 @@ library LibACLManager {
     ) private {
         if (hasRole(s, role, account)) {
             s._roles[role].members[account] = false;
-            emit RoleRevoked(role, account, Context._msgSender());
+            emit RoleRevoked(role, account, Query._msgSender());
         }
     }
 }
