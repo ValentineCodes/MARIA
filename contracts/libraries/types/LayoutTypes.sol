@@ -66,7 +66,7 @@ library LayoutTypes {
     }
 
     struct MTokenLayout {
-        address mariaDiamond;
+        address _mariaDiamond;
         address _treasury;
         address _underlyingAsset;
         // Map of users address and their state data (userAddress => userStateData)
