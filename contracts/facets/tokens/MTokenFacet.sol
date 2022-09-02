@@ -12,14 +12,14 @@ import {IACLManager} from "../../interfaces/IACLManager.sol";
 contract MToken is OwnableInternal {
     using LibMToken for LayoutTypes.MTokenLayout;
 
+    address internal immutable _aclManager;
+
     /**
      * @dev Only pool admin can call functions marked by this modifier.
      **/
     modifier onlyPoolAdmin() {
         require(
-            IACLManager(LibMToken.layout()._mariaDiamond).isPoolAdmin(
-                msg.sender
-            ),
+            IACLManager(_aclManager).isPoolAdmin(msg.sender),
             Errors.CALLER_NOT_POOL_ADMIN
         );
         _;
@@ -30,7 +30,7 @@ contract MToken is OwnableInternal {
      **/
     modifier onlyPool() {
         require(
-            Query._msgSender() == LibMToken.layout()._mariaDiamond,
+            Query._msgSender() == LibMToken.layout()._pool,
             Errors.CALLER_MUST_BE_POOL
         );
         _;
@@ -44,19 +44,26 @@ contract MToken is OwnableInternal {
         string memory name,
         string memory symbol,
         uint8 decimals,
-        address mariaDiamond,
+        address pool,
         address treasury,
         address underlyingAsset
     ) external onlyOwner {
-        return
-            LibMToken.layout().initializeMToken(
-                name,
-                symbol,
-                decimals,
-                mariaDiamond,
-                treasury,
-                underlyingAsset
-            );
+        LibMToken.layout().initializeMToken(
+            name,
+            symbol,
+            decimals,
+            pool,
+            treasury,
+            underlyingAsset
+        );
+    }
+
+    function EIP712_REVISION() external view returns (bytes) {
+        return LibMToken.EIP712_REVISION();
+    }
+
+    function PERMIT_TYPEHASH() external view returns (bytes32) {
+        return LibMToken.PERMIT_TYPEHASH();
     }
 
     function RESERVE_TREASURY_ADDRESS() external view returns (address) {

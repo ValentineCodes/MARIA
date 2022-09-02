@@ -66,7 +66,7 @@ library LayoutTypes {
     }
 
     struct MTokenLayout {
-        address _mariaDiamond;
+        address _pool;
         address _treasury;
         address _underlyingAsset;
         // Map of users address and their state data (userAddress => userStateData)
@@ -94,5 +94,47 @@ library LayoutTypes {
          */
         bool initializing;
 
+    }
+
+    struct StableDebtTokenLayout {
+        address _pool;
+        address _underlyingAsset;
+
+        // Map of users address and the timestamp of their last update (userAddress => lastUpdateTimestamp)
+        mapping(address => uint40) _timestamps;
+
+        // Map of borrow allowances (delegator => delegatee => borrowAllowanceAmount)
+        mapping(address => mapping(address => uint256)) _borrowAllowances;
+
+        // Map of address nonces (address => nonce)
+        mapping(address => uint256) _nonces;
+
+        // Map of users address and their state data (userAddress => userStateData)
+        mapping(address => DataTypes.UserState) internal _userState;
+
+        // Map of allowances (delegator => delegatee => allowanceAmount)
+        mapping(address => mapping(address => uint256)) private _allowances;
+
+        uint256 internal _totalSupply;
+        string private _name;
+        string private _symbol;
+        uint8 private _decimals;
+
+        bytes32 _domainSeparator;
+
+        uint128 _avgStableRate;
+
+        // Timestamp of the last update of the total supply
+        uint40 _totalSupplyTimestamp;
+        
+          /**
+         * @dev Indicates that the contract has been initialized.
+         */
+        uint256 lastInitializedRevision = 0;
+
+        /**
+         * @dev Indicates that the contract is in the process of being initialized.
+         */
+        bool initializing;
     }
 }

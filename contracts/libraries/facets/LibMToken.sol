@@ -18,11 +18,32 @@ library LibMToken {
 
     bytes32 internal constant STORAGE_SLOT = keccak256("mToken.storage");
 
-    bytes public constant EIP712_REVISION = bytes("1");
+    bytes internal constant EIP712_REVISION = bytes("1");
     bytes32 internal constant EIP712_DOMAIN = keccak256("EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)");
-    bytes32 public constant PERMIT_TYPEHASH = keccak256('Permit(address owner,address spender,uint256 value,uint256 nonce,uint256 deadline)');
+    bytes32 internal constant PERMIT_TYPEHASH = keccak256('Permit(address owner,address spender,uint256 value,uint256 nonce,uint256 deadline)');
 
     uint256 internal immutable _chainId;
+
+      /**
+     * @dev Emitted when an aToken is initialized
+     * @param underlyingAsset The address of the underlying asset
+     * @param pool The address of the associated pool
+     * @param treasury The address of the treasury
+     * @param decimals The decimals of the underlying
+     * @param name The name of the aToken
+     * @param symbol The symbol of the aToken
+     * @param params A set of encoded parameters for additional initialization
+     **/
+    event Initialized(
+        address indexed underlyingAsset,
+        address indexed pool,
+        address treasury,
+        uint8 decimals,
+        string name,
+        string symbol,
+        bytes params
+    );
+
     /**
      * @dev Emitted when `value` tokens are moved from one account (`from`) to
      * another (`to`).
@@ -103,7 +124,7 @@ library LibMToken {
     function layout()
         internal
         pure
-        returns (LayoutTypes.ACLManagerLayout storage s)
+        returns (LayoutTypes.MTokenLayout storage s)
     {
         bytes32 slot = STORAGE_SLOT;
         assembly {
@@ -127,17 +148,36 @@ library LibMToken {
         string memory name,
         string memory symbol,
         uint8 decimals,
-        address mariaDiamond,
+        address pool,
         address treasury,
-        address underlyingAsset
+        address underlyingAsset,
+        bytes calldata params
     ) internal initializer(s) {
         s._name = name;
         s._symbol = symbol;
         s._decimals = decimals;
-        s._mariaDiamond = mariaDiamond;
+        s._pool = pool;
         s._treasury = treasury;
         s._underlyingAsset = underlyingAsset;
         s._domainSeparator = _calculateDomainSeparator();
+
+        emit Initialized(
+            underlyingAsset,
+            pool,
+            treasury,
+            decimals,
+            name,
+            symbol,
+            params
+        );
+    }
+
+    function EIP712_REVISION() internal view returns (bytes) {
+        return EIP712_REVISION;
+    }
+
+    function PERMIT_TYPEHASH() internal view returns (bytes32) {
+        return PERMIT_TYPEHASH;
     }
 
     function RESERVE_TREASURY_ADDRESS(LayoutTypes.MTokenLayout storage s)
@@ -180,7 +220,7 @@ library LibMToken {
     }
 
     function balanceOf(LayoutTypes.MTokenLayout storage s, address user) internal view returns (uint256) {
-        return s._userState[user].balance.rayMul(IPool(s._mariaDiamond).getReserveNormalizedIncome(s._underlyingAsset));
+        return s._userState[user].balance.rayMul(IPool(s._pool).getReserveNormalizedIncome(s._underlyingAsset));
     }
 
     function totalSupply(LayoutTypes.MTokenLayout storage s) internal view returns (uint256) {
@@ -188,11 +228,21 @@ library LibMToken {
 
         if (currentScaledSupply == 0) { return 0; }
 
-        return currentScaledSupply.rayMul(IPool(s._mariaDiamond).getReserveNormalizedIncome(s._underlyingAsset));
+        return currentScaledSupply.rayMul(IPool(s._pool).getReserveNormalizedIncome(s._underlyingAsset));
     }
 
     function allowance(LayoutTypes.MTokenLayout storage s, address owner, address spender) internal view returns (uint256) {
         return s._allowances[owner][spender];
+    }
+
+    function increaseAllowance(LayoutTypes.MTokenLayout storage s, address spender, uint256 addedValue) internal returns (bool) {
+        _approve(s, Query._msgSender(), spender, s._allowances[Query._msgSender()][spender] + addedValue);
+        return true;
+    }
+
+    function decreaseAllowance(LayoutTypes.MTokenLayout storage s, address spender, uint256 subtractedValue) internal returns (bool) {
+       _approve(s, Query._msgSender(), spender, s._allowances[Query._msgSender()][spender] + subtractedValue);
+        return true;
     }
 
     function approve(LayoutTypes.MTokenLayout storage s, address spender, uint256 amount) internal returns (bool) {
@@ -249,16 +299,6 @@ library LibMToken {
         IERC20(s._underlyingAsset).safeTransfer(target, amount);
     }
 
-    function increaseAllowance(LayoutTypes.MTokenLayout storage s, address spender, uint256 addedValue) internal returns (bool) {
-        _approve(s, Query._msgSender(), spender, s._allowances[Query._msgSender()][spender] + addedValue);
-        return true;
-    }
-
-    function decreaseAllowance(LayoutTypes.MTokenLayout storage s, address spender, uint256 subtractedValue) internal returns (bool) {
-       _approve(s, Query._msgSender(), spender, s._allowances[Query._msgSender()][spender] + subtractedValue);
-        return true;
-    }
-
     function mint(
         LayoutTypes.MTokenLayout storage s,
         address caller,
@@ -287,7 +327,7 @@ library LibMToken {
         uint256 amount,
         uint256 index
     ) internal returns (bool) {
-        return _mintScaled(s, s._mariaDiamond, s._treasury, amount, index);
+        return _mintScaled(s, s._pool, s._treasury, amount, index);
     }
 
     function permit(
@@ -376,10 +416,10 @@ library LibMToken {
     ) internal {
         address underlyingAsset = s._underlyingAsset;
 
-        uint256 index = IPool(s._mariaDiamond).getReserveNormalizedIncome(underlyingAsset);
+        uint256 index = IPool(s._pool).getReserveNormalizedIncome(underlyingAsset);
 
-        uint256 fromBalanceBefore = scaledBalanceOf(from).rayMul(index);
-        uint256 toBalanceBefore = scaledBalanceOf(to).rayMul(index);
+        // uint256 fromBalanceBefore = scaledBalanceOf(from).rayMul(index);
+        // uint256 toBalanceBefore = scaledBalanceOf(to).rayMul(index);
 
         _transfer(s, from, to, amount.rayDiv(index).toUint128());
 
@@ -425,14 +465,14 @@ library LibMToken {
         require(amountScaled != 0, Errors.INVALID_MINT_AMOUNT);
 
         uint256 scaledBalance = scaledBalanceOf(s, onBehalfOf);
-        uint256 balanceIncrease = scaledBalance.rayMul(index) -
-        scaledBalance.rayMul(s._userState[onBehalfOf].additionalData);
+        uint256 balanceIncrease = scaledBalance.rayMul(index) - scaledBalance.rayMul(s._userState[onBehalfOf].additionalData);
 
         s._userState[onBehalfOf].additionalData = index.toUint128();
 
         _mint(onBehalfOf, amountScaled.toUint128());
 
         uint256 amountToMint = amount + balanceIncrease;
+        
         emit Transfer(address(0), onBehalfOf, amountToMint);
         emit Mint(caller, onBehalfOf, amountToMint, balanceIncrease, index);
 
@@ -456,24 +496,26 @@ library LibMToken {
         uint256 index
     ) internal {
         uint256 amountScaled = amount.rayDiv(index);
+
         require(amountScaled != 0, Errors.INVALID_BURN_AMOUNT);
 
         uint256 scaledBalance = scaledBalanceOf(user);
-        uint256 balanceIncrease = scaledBalance.rayMul(index) -
-        scaledBalance.rayMul(s._userState[user].additionalData);
+        uint256 balanceIncrease = scaledBalance.rayMul(index) - scaledBalance.rayMul(s._userState[user].additionalData);
 
         s._userState[user].additionalData = index.toUint128();
 
         _burn(user, amountScaled.toUint128());
 
         if (balanceIncrease > amount) {
-        uint256 amountToMint = balanceIncrease - amount;
-        emit Transfer(address(0), user, amountToMint);
-        emit Mint(user, user, amountToMint, balanceIncrease, index);
+            uint256 amountToMint = balanceIncrease - amount;
+
+            emit Transfer(address(0), user, amountToMint);
+            emit Mint(user, user, amountToMint, balanceIncrease, index);
         } else {
-        uint256 amountToBurn = amount - balanceIncrease;
-        emit Transfer(user, address(0), amountToBurn);
-        emit Burn(user, target, amountToBurn, balanceIncrease, index);
+            uint256 amountToBurn = amount - balanceIncrease;
+
+            emit Transfer(user, address(0), amountToBurn);
+            emit Burn(user, target, amountToBurn, balanceIncrease, index);
         }
     }
 
