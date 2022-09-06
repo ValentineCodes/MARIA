@@ -224,7 +224,7 @@ library LibMToken {
     }
 
     function totalSupply(LayoutTypes.MTokenLayout storage s) internal view returns (uint256) {
-        uint256 currentScaledSupply = scaledTotalSupply(s);
+        uint256 currentScaledSupply = s._totalSupply;
 
         if (currentScaledSupply == 0) { return 0; }
 
@@ -259,7 +259,7 @@ library LibMToken {
     }
 
     function getScaledUserBalanceAndSupply(LayoutTypes.MTokenLayout storage s, address user) internal view returns (uint256, uint256) {
-        return (scaledBalanceOf(s, user), scaledTotalSupply(s));
+        return (s._userState[user].balance, s._totalSupply);
     }
 
     function getPreviousIndex(LayoutTypes.MTokenLayout storage s, address user) internal view returns (uint256) {

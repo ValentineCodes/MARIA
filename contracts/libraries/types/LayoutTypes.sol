@@ -137,4 +137,27 @@ library LayoutTypes {
          */
         bool initializing;
     }
+
+    struct VariableDebtTokenLayout {
+        address _pool;
+        address _underlyingAsset;
+
+        // Map of borrow allowances (delegator => delegatee => borrowAllowanceAmount)
+        mapping(address => mapping(address => uint256)) _borrowAllowances;
+
+        // Map of address nonces (address => nonce)
+        mapping(address => uint256) _nonces;
+
+        // Map of users address and their state data (userAddress => userStateData)
+        mapping(address => DataTypes.UserState) internal _userState;
+
+        // Map of allowances (delegator => delegatee => allowanceAmount)
+        mapping(address => mapping(address => uint256)) private _allowances;
+
+        bytes32 _domainSeparator;
+        uint256 internal _totalSupply;
+        string private _name;
+        string private _symbol;
+        uint8 private _decimals;
+    }
 }

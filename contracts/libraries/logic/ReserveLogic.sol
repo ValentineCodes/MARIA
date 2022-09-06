@@ -13,6 +13,7 @@ import {PercentageMath} from "../math/PercentageMath.sol";
 import {Errors} from "../utils/Errors.sol";
 import {DataTypes} from "../types/DataTypes.sol";
 import {SafeCast} from "../../dependencies/openzeppelin/contracts/SafeCast.sol";
+import {LayoutTypes} from "../types/LayoutTypes.sol";
 
 /**
  * @title ReserveLogic library
@@ -70,28 +71,28 @@ library ReserveLogic {
      * @notice Returns the ongoing normalized variable debt for the reserve.
      * @dev A value of 1e27 means there is no debt. As time passes, the debt is accrued
      * @dev A value of 2*1e27 means that for each unit of debt, one unit worth of interest has been accumulated
-     * @param reserve The reserve object
+     * @param asset Underlying asset of reserve
      * @return The normalized variable debt, expressed in ray
      **/
-    function getNormalizedDebt(DataTypes.ReserveData storage reserve)
+    function getNormalizedDebt(LayoutTypes.PoolLayout storage s, address asset)
         internal
         view
         returns (uint256)
     {
-        uint40 timestamp = reserve.lastUpdateTimestamp;
+        uint40 timestamp = s._reserves[asset].lastUpdateTimestamp;
 
         //solium-disable-next-line
         if (timestamp == block.timestamp) {
             //if the index was updated in the same block, no need to perform any calculation
-            return reserve.variableBorrowIndex;
+            return s._reserves[asset].variableBorrowIndex;
         } else {
             return
                 MathUtils
                     .calculateCompoundedInterest(
-                        reserve.currentVariableBorrowRate,
+                        s._reserves[asset].currentVariableBorrowRate,
                         timestamp
                     )
-                    .rayMul(reserve.variableBorrowIndex);
+                    .rayMul(s._reserves[asset].variableBorrowIndex);
         }
     }
 

@@ -35,11 +35,7 @@ library LibPool {
         }
     }
 
-    function layout()
-        internal
-        pure
-        returns (LayoutTypes.ACLManagerLayout storage s)
-    {
+    function layout() internal pure returns (LayoutTypes.PoolLayout storage s) {
         bytes32 slot = STORAGE_SLOT;
         assembly {
             s.slot := slot
@@ -82,6 +78,37 @@ library LibPool {
                         reserve.lastUpdateTimestamp
                     )
                     .rayMul(reserve.liquidityIndex);
+        }
+    }
+
+    /**
+     * @notice Returns the ongoing normalized variable debt for the reserve.
+     * @dev A value of 1e27 means there is no debt. As time passes, the debt is accrued
+     * @dev A value of 2*1e27 means that for each unit of debt, one unit worth of interest has been accumulated
+     * @param asset Underlying asset of reserve
+     * @return The normalized variable debt, expressed in ray
+     **/
+    function getNormalizedDebt(LayoutTypes.PoolLayout storage s, address asset)
+        internal
+        view
+        returns (uint256)
+    {
+        DataTypes.ReserveData memory reserve = s._reserves[asset];
+
+        uint40 timestamp = reserve.lastUpdateTimestamp;
+
+        //solium-disable-next-line
+        if (timestamp == block.timestamp) {
+            //if the index was updated in the same block, no need to perform any calculation
+            return reserve.variableBorrowIndex;
+        } else {
+            return
+                MathUtils
+                    .calculateCompoundedInterest(
+                        reserve.currentVariableBorrowRate,
+                        timestamp
+                    )
+                    .rayMul(reserve.variableBorrowIndex);
         }
     }
 }

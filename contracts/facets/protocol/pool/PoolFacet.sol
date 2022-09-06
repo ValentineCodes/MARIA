@@ -185,7 +185,9 @@ contract Pool is IPool, OwnableInternal {
         view
         override
         returns (uint256)
-    {}
+    {
+        return LibPool.layout().getNormalizedDebt(asset);
+    }
 
     /// @inheritdoc IPool
     function getReservesList()

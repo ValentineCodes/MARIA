@@ -395,7 +395,7 @@ library LibStableDebtToken {
         _approveDelegation(s, Query._msgSender(), delegatee, amount);
     }
 
-      function delegationWithSig(
+    function delegationWithSig(
         LayoutTypes.StableDebtTokenLayout storage s,
         address delegator,
         address delegatee,
