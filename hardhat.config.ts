@@ -120,7 +120,7 @@ const config: HardhatUserConfig = {
   },
   contractSizer: {
     runOnCompile: false,
-    only: ["NFTSwapFactory", "NFTSwapPool"],
+    // only: ["NFTSwapFactory", "NFTSwapPool"],
   },
   namedAccounts: {
     deployer: {
