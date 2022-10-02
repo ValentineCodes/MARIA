@@ -5,6 +5,7 @@ pragma solidity ^0.8.10;
 import {LibPool} from "../../../libraries/facets/LibPool.sol";
 import {LayoutTypes} from "../../../libraries/types/LayoutTypes.sol";
 import {OwnableInternal} from "../../../dependencies/solidstate/contracts/access/ownable/OwnableInternal.sol";
+import {IERC20WithPermit} from '../../../interfaces/IERC20WithPermit.sol';
 import {IPool} from "../../../interfaces/IPool.sol";
 
 contract Pool is IPool, OwnableInternal {
@@ -42,7 +43,24 @@ contract Pool is IPool, OwnableInternal {
         uint8 permitV,
         bytes32 permitR,
         bytes32 permitS
-    ) external override {}
+    ) external override {
+        IERC20WithPermit(asset).permit(
+            msg.sender,
+            address(this),
+            amount,
+            deadline,
+            permitV,
+            permitR,
+            permitS
+        );
+
+        LibPool.supply(
+            address asset,
+            uint256 amount,
+            address onBehalfOf,
+            uint16 referralCode
+        );
+    }
 
     /// @inheritdoc IPool
     function withdraw(
