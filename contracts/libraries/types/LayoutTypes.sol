@@ -160,4 +160,35 @@ library LayoutTypes {
         string private _symbol;
         uint8 private _decimals;
     }
+
+    struct DelegationMTokenLayout {
+        address _pool;
+        address _treasury;
+        address _underlyingAsset;
+        // Map of users address and their state data (userAddress => userStateData)
+        mapping(address => DataTypes.UserState) _userState;
+
+        // Map of allowances (delegator => delegatee => allowanceAmount)
+        mapping(address => mapping(address => uint256)) _allowances;
+
+        // Map of address nonces (address => nonce)
+        mapping(address => uint256) _nonces;
+
+        bytes32 _domainSeparator;
+
+        uint256 _totalSupply;
+        string _name;
+        string _symbol;
+        uint8 _decimals;
+        /**
+         * @dev Indicates that the contract has been initialized.
+         */
+        uint256 lastInitializedRevision = 0;
+
+        /**
+         * @dev Indicates that the contract is in the process of being initialized.
+         */
+        bool initializing;
+
+    }
 }

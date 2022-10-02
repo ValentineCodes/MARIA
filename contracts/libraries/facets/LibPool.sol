@@ -5,11 +5,26 @@ pragma solidity ^0.8.10;
 import {LayoutTypes} from "../types/LayoutTypes.sol";
 import {DataTypes} from "../types/DataTypes.sol";
 import {Query} from "../utils/Query.sol";
+import {IERC20} from '../../../dependencies/openzeppelin/contracts/IERC20.sol';
+import {GPv2SafeERC20} from '../../../dependencies/gnosis/contracts/GPv2SafeERC20.sol';
+import {IMToken} from '../../interfaces/IMToken.sol';
+import {Errors} from '../utils/Errors.sol';
 import {MathUtils} from "../math/MathUtils.sol";
-import {WadRayMath} from "../math/WadRayMath.sol";
+import {WadRayMath} from '../math/WadRayMath.sol';
+import {PercentageMath} from '../math/PercentageMath.sol';
+import {ValidationLogic} from '../logic/ValidationLogic.sol';
+import {ReserveLogic} from '../logic/ReserveLogic.sol';
+import {ReserveConfiguration} from '../configuration/ReserveConfiguration.sol';
+import {UserConfiguration} from '../configuration/UserConfiguration.sol';
 
 library LibPool {
+    using ReserveLogic for DataTypes.ReserveCache;
+    using ReserveLogic for DataTypes.ReserveData;
+    using GPv2SafeERC20 for IERC20;
+    using UserConfiguration for DataTypes.UserConfigurationMap;
+    using ReserveConfiguration for DataTypes.ReserveConfigurationMap;
     using WadRayMath for uint256;
+    using PercentageMath for uint256;
 
     bytes32 internal constant STORAGE_SLOT = keccak256("pool.storage");
 
@@ -60,7 +75,10 @@ library LibPool {
         uint256 amount,
         address onBehalfOf,
         uint16 referralCode
-    ) internal {}
+    ) internal {
+        DataTypes.ReserveData storage reserve = s._reserves[asset];
+        DataTypes.ReserveCache memory reserveCache = reserve.cache();
+    }
 
     function getReserveNormalizedIncome(
         LayoutTypes.PoolLayout storage s,
