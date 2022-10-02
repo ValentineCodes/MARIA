@@ -162,7 +162,7 @@ library BorrowLogic {
     );
 
     if (params.releaseUnderlying) {
-      IMToken(reserveCache.aTokenAddress).transferUnderlyingTo(
+      IMToken(reserveCache.mTokenAddress).transferUnderlyingTo(
         params.user,
         params.amount
       );
@@ -227,7 +227,7 @@ library BorrowLogic {
 
     // Allows a user to repay with aTokens without leaving dust from interest.
     if (params.useATokens && params.amount == type(uint256).max) {
-      params.amount = IMToken(reserveCache.aTokenAddress).balanceOf(msg.sender);
+      params.amount = IMToken(reserveCache.mTokenAddress).balanceOf(msg.sender);
     }
 
     // Ensure amount to repay is less than debt
@@ -275,19 +275,19 @@ library BorrowLogic {
     );
 
     if (params.useATokens) {
-      IMToken(reserveCache.aTokenAddress).burn(
+      IMToken(reserveCache.mTokenAddress).burn(
         msg.sender,
-        reserveCache.aTokenAddress,
+        reserveCache.mTokenAddress,
         paybackAmount,
         reserveCache.nextLiquidityIndex
       );
     } else {
       IERC20(params.asset).safeTransferFrom(
         msg.sender,
-        reserveCache.aTokenAddress,
+        reserveCache.mTokenAddress,
         paybackAmount
       );
-      IMToken(reserveCache.aTokenAddress).handleRepayment(
+      IMToken(reserveCache.mTokenAddress).handleRepayment(
         msg.sender,
         paybackAmount
       );

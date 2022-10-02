@@ -203,7 +203,10 @@ library UserConfiguration {
    * @return The address of the only asset used as collateral
    * @return The debt ceiling of the reserve
    */
-  function getIsolationModeState(DataTypes.UserConfigurationMap memory self)
+  function getIsolationModeState(
+    LayoutTypes.PoolLayout storage s,
+    DataTypes.UserConfigurationMap memory self
+  )
     internal
     view
     returns (
@@ -212,8 +215,6 @@ library UserConfiguration {
       uint256
     )
   {
-    LayoutTypes.PoolLayout storage s = LibPool.layout();
-
     if (isUsingAsCollateralOne(self)) {
       uint256 assetId = _getFirstAssetIdByMask(self, COLLATERAL_MASK);
 

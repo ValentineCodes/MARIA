@@ -99,7 +99,7 @@ library FlashLoanLogic {
       vars.totalPremiums[vars.i] = vars.currentAmount.percentMul(
         vars.flashloanPremiumTotal
       );
-      IMToken(reservesData[params.assets[vars.i]].aTokenAddress)
+      IMToken(reservesData[params.assets[vars.i]].mTokenAddress)
         .transferUnderlyingTo(params.receiverAddress, vars.currentAmount);
     }
 
@@ -202,7 +202,7 @@ library FlashLoanLogic {
     uint256 totalPremium = params.amount.percentMul(
       params.flashLoanPremiumTotal
     );
-    IMToken(reserve.aTokenAddress).transferUnderlyingTo(
+    IMToken(reserve.mTokenAddress).transferUnderlyingTo(
       params.receiverAddress,
       params.amount
     );
@@ -250,7 +250,7 @@ library FlashLoanLogic {
     DataTypes.ReserveCache memory reserveCache = reserve.cache();
     reserve.updateState(reserveCache);
     reserveCache.nextLiquidityIndex = reserve.cumulateToLiquidityIndex(
-      IERC20(reserveCache.aTokenAddress).totalSupply(),
+      IERC20(reserveCache.mTokenAddress).totalSupply(),
       premiumToLP
     );
 
@@ -267,11 +267,11 @@ library FlashLoanLogic {
 
     IERC20(params.asset).safeTransferFrom(
       params.receiverAddress,
-      reserveCache.aTokenAddress,
+      reserveCache.mTokenAddress,
       amountPlusPremium
     );
 
-    IMToken(reserveCache.aTokenAddress).handleRepayment(
+    IMToken(reserveCache.mTokenAddress).handleRepayment(
       params.receiverAddress,
       amountPlusPremium
     );

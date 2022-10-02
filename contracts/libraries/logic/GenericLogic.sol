@@ -1,16 +1,17 @@
 // SPDX-License-Identifier: BUSL-1.1
 pragma solidity 0.8.10;
 
-import {IERC20} from '../../../dependencies/openzeppelin/contracts/IERC20.sol';
-import {IScaledBalanceToken} from '../../../interfaces/IScaledBalanceToken.sol';
-import {IPriceOracleGetter} from '../../../interfaces/IPriceOracleGetter.sol';
-import {ReserveConfiguration} from '../configuration/ReserveConfiguration.sol';
-import {UserConfiguration} from '../configuration/UserConfiguration.sol';
-import {PercentageMath} from '../math/PercentageMath.sol';
-import {WadRayMath} from '../math/WadRayMath.sol';
-import {DataTypes} from '../types/DataTypes.sol';
-import {ReserveLogic} from './ReserveLogic.sol';
-import {EModeLogic} from './EModeLogic.sol';
+import { IERC20 } from "../../../dependencies/openzeppelin/contracts/IERC20.sol";
+import { IScaledBalanceToken } from "../../../interfaces/IScaledBalanceToken.sol";
+import { IPriceOracleGetter } from "../../../interfaces/IPriceOracleGetter.sol";
+import { ReserveConfiguration } from "../configuration/ReserveConfiguration.sol";
+import { UserConfiguration } from "../configuration/UserConfiguration.sol";
+import { PercentageMath } from "../math/PercentageMath.sol";
+import { WadRayMath } from "../math/WadRayMath.sol";
+import { DataTypes } from "../types/DataTypes.sol";
+import { LayoutTypes } from "../types/LayoutTypes.sol";
+import { ReserveLogic } from "./ReserveLogic.sol";
+import { EModeLogic } from "./EModeLogic.sol";
 
 /**
  * @title GenericLogic library
@@ -50,9 +51,7 @@ library GenericLogic {
    * @notice Calculates the user data across the reserves.
    * @dev It includes the total liquidity/collateral/borrow balances in the base currency used by the price feed,
    * the average Loan To Value, the average Liquidation Ratio, and the Health factor.
-   * @param reservesData The state of all the reserves
-   * @param reservesList The addresses of all the active reserves
-   * @param eModeCategories The configuration of all the efficiency mode categories
+   * @param s Pool storage
    * @param params Additional parameters needed for the calculation
    * @return The total collateral of the user in the base currency used by the price feed
    * @return The total debt of the user in the base currency used by the price feed
@@ -62,9 +61,7 @@ library GenericLogic {
    * @return True if the ltv is zero, false otherwise
    **/
   function calculateUserAccountData(
-    mapping(address => DataTypes.ReserveData) storage reservesData,
-    mapping(uint256 => address) storage reservesList,
-    mapping(uint8 => DataTypes.EModeCategory) storage eModeCategories,
+    LayoutTypes.PoolLayout storage s,
     DataTypes.CalculateUserAccountDataParams memory params
   )
     internal
@@ -87,7 +84,7 @@ library GenericLogic {
     if (params.userEModeCategory != 0) {
       (vars.eModeLtv, vars.eModeLiqThreshold, vars.eModeAssetPrice) = EModeLogic
         .getEModeConfiguration(
-          eModeCategories[params.userEModeCategory],
+          s._eModeCategories[params.userEModeCategory],
           IPriceOracleGetter(params.oracle)
         );
     }
@@ -100,7 +97,7 @@ library GenericLogic {
         continue;
       }
 
-      vars.currentReserveAddress = reservesList[vars.i];
+      vars.currentReserveAddress = s._reservesList[vars.i];
 
       if (vars.currentReserveAddress == address(0)) {
         unchecked {
@@ -109,7 +106,9 @@ library GenericLogic {
         continue;
       }
 
-      DataTypes.ReserveData storage currentReserve = reservesData[vars.currentReserveAddress];
+      DataTypes.ReserveData storage currentReserve = s._reserves[
+        vars.currentReserveAddress
+      ];
 
       (
         vars.ltv,
@@ -127,9 +126,14 @@ library GenericLogic {
       vars.assetPrice = vars.eModeAssetPrice != 0 &&
         params.userEModeCategory == vars.eModeAssetCategory
         ? vars.eModeAssetPrice
-        : IPriceOracleGetter(params.oracle).getAssetPrice(vars.currentReserveAddress);
+        : IPriceOracleGetter(params.oracle).getAssetPrice(
+          vars.currentReserveAddress
+        );
 
-      if (vars.liquidationThreshold != 0 && params.userConfig.isUsingAsCollateral(vars.i)) {
+      if (
+        vars.liquidationThreshold != 0 &&
+        params.userConfig.isUsingAsCollateral(vars.i)
+      ) {
         vars.userBalanceInBaseCurrency = _getUserBalanceInBaseCurrency(
           params.user,
           currentReserve,
@@ -154,7 +158,11 @@ library GenericLogic {
 
         vars.avgLiquidationThreshold +=
           vars.userBalanceInBaseCurrency *
-          (vars.isInEModeCategory ? vars.eModeLiqThreshold : vars.liquidationThreshold);
+          (
+            vars.isInEModeCategory
+              ? vars.eModeLiqThreshold
+              : vars.liquidationThreshold
+          );
       }
 
       if (params.userConfig.isBorrowing(vars.i)) {
@@ -182,9 +190,11 @@ library GenericLogic {
 
     vars.healthFactor = (vars.totalDebtInBaseCurrency == 0)
       ? type(uint256).max
-      : (vars.totalCollateralInBaseCurrency.percentMul(vars.avgLiquidationThreshold)).wadDiv(
-        vars.totalDebtInBaseCurrency
-      );
+      : (
+        vars.totalCollateralInBaseCurrency.percentMul(
+          vars.avgLiquidationThreshold
+        )
+      ).wadDiv(vars.totalDebtInBaseCurrency);
     return (
       vars.totalCollateralInBaseCurrency,
       vars.totalDebtInBaseCurrency,
@@ -208,13 +218,16 @@ library GenericLogic {
     uint256 totalDebtInBaseCurrency,
     uint256 ltv
   ) internal pure returns (uint256) {
-    uint256 availableBorrowsInBaseCurrency = totalCollateralInBaseCurrency.percentMul(ltv);
+    uint256 availableBorrowsInBaseCurrency = totalCollateralInBaseCurrency
+      .percentMul(ltv);
 
     if (availableBorrowsInBaseCurrency < totalDebtInBaseCurrency) {
       return 0;
     }
 
-    availableBorrowsInBaseCurrency = availableBorrowsInBaseCurrency - totalDebtInBaseCurrency;
+    availableBorrowsInBaseCurrency =
+      availableBorrowsInBaseCurrency -
+      totalDebtInBaseCurrency;
     return availableBorrowsInBaseCurrency;
   }
 
@@ -236,14 +249,16 @@ library GenericLogic {
     uint256 assetUnit
   ) private view returns (uint256) {
     // fetching variable debt
-    uint256 userTotalDebt = IScaledBalanceToken(reserve.variableDebtTokenAddress).scaledBalanceOf(
-      user
-    );
+    uint256 userTotalDebt = IScaledBalanceToken(
+      reserve.variableDebtTokenAddress
+    ).scaledBalanceOf(user);
     if (userTotalDebt != 0) {
       userTotalDebt = userTotalDebt.rayMul(reserve.getNormalizedDebt());
     }
 
-    userTotalDebt = userTotalDebt + IERC20(reserve.stableDebtTokenAddress).balanceOf(user);
+    userTotalDebt =
+      userTotalDebt +
+      IERC20(reserve.stableDebtTokenAddress).balanceOf(user);
 
     userTotalDebt = assetPrice * userTotalDebt;
 
@@ -270,7 +285,9 @@ library GenericLogic {
   ) private view returns (uint256) {
     uint256 normalizedIncome = reserve.getNormalizedIncome();
     uint256 balance = (
-      IScaledBalanceToken(reserve.aTokenAddress).scaledBalanceOf(user).rayMul(normalizedIncome)
+      IScaledBalanceToken(reserve.mTokenAddress).scaledBalanceOf(user).rayMul(
+        normalizedIncome
+      )
     ) * assetPrice;
 
     unchecked {

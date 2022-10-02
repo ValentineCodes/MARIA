@@ -77,15 +77,15 @@ library SupplyLogic {
     // Updates the liquidity, borrow and supply interest rates
     reserve.updateInterestRates(reserveCache, params.asset, params.amount, 0);
 
-    // Transfers the asset to the aTokenAddress
+    // Transfers the asset to the mTokenAddress
     IERC20(params.asset).safeTransferFrom(
       msg.sender,
-      reserveCache.aTokenAddress,
+      reserveCache.mTokenAddress,
       params.amount
     );
 
     // True if previous user balance was 0
-    bool isFirstSupply = IMToken(reserveCache.aTokenAddress).mint(
+    bool isFirstSupply = IMToken(reserveCache.mTokenAddress).mint(
       msg.sender,
       params.onBehalfOf,
       params.amount,
@@ -147,7 +147,7 @@ library SupplyLogic {
     reserve.updateState(reserveCache);
 
     // User aToken balance
-    uint256 userBalance = IMToken(reserveCache.aTokenAddress)
+    uint256 userBalance = IMToken(reserveCache.mTokenAddress)
       .scaledBalanceOf(msg.sender)
       .rayMul(reserveCache.nextLiquidityIndex);
 
@@ -172,7 +172,7 @@ library SupplyLogic {
     );
 
     // Burn aTokens of asset
-    IMToken(reserveCache.aTokenAddress).burn(
+    IMToken(reserveCache.mTokenAddress).burn(
       msg.sender,
       params.to,
       amountToWithdraw,
@@ -308,7 +308,7 @@ library SupplyLogic {
     DataTypes.ReserveData storage reserve = reservesData[asset];
     DataTypes.ReserveCache memory reserveCache = reserve.cache();
 
-    uint256 userBalance = IERC20(reserveCache.aTokenAddress).balanceOf(
+    uint256 userBalance = IERC20(reserveCache.mTokenAddress).balanceOf(
       msg.sender
     );
 

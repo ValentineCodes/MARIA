@@ -92,7 +92,7 @@ library BridgeLogic {
     reserve.updateInterestRates(reserveCache, asset, 0, 0);
 
     // Mint aTokens to recipient and returns true if previous recipient balance was 0
-    bool isFirstSupply = IMToken(reserveCache.aTokenAddress).mint(
+    bool isFirstSupply = IMToken(reserveCache.mTokenAddress).mint(
       msg.sender,
       onBehalfOf,
       amount,
@@ -148,7 +148,7 @@ library BridgeLogic {
 
     // Accumulate fee to the reserve
     reserveCache.nextLiquidityIndex = reserve.cumulateToLiquidityIndex(
-      IERC20(reserveCache.aTokenAddress).totalSupply(),
+      IERC20(reserveCache.mTokenAddress).totalSupply(),
       feeToLP
     );
 
@@ -161,10 +161,10 @@ library BridgeLogic {
     // Updates the liquidity, borrow and supply interest rates
     reserve.updateInterestRates(reserveCache, asset, added, 0);
 
-    // Transfers the asset to the aTokenAddress
+    // Transfers the asset to the mTokenAddress
     IERC20(asset).safeTransferFrom(
       msg.sender,
-      reserveCache.aTokenAddress,
+      reserveCache.mTokenAddress,
       added
     );
 

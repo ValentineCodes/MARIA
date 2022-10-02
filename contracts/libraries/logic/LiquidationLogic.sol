@@ -225,11 +225,11 @@ library LiquidationLogic {
     // Transfers the debt asset being repaid to the aToken, where the liquidity is kept
     IERC20(params.debtAsset).safeTransferFrom(
       msg.sender,
-      vars.debtReserveCache.aTokenAddress,
+      vars.debtReserveCache.mTokenAddress,
       vars.actualDebtToLiquidate
     );
 
-    IMToken(vars.debtReserveCache.aTokenAddress).handleRepayment(
+    IMToken(vars.debtReserveCache.mTokenAddress).handleRepayment(
       msg.sender,
       vars.actualDebtToLiquidate
     );
@@ -426,7 +426,7 @@ library LiquidationLogic {
       uint256
     )
   {
-    IMToken collateralAToken = IMToken(collateralReserve.aTokenAddress);
+    IMToken collateralAToken = IMToken(collateralReserve.mTokenAddress);
     uint256 liquidationBonus = collateralReserve
       .configuration
       .getLiquidationBonus();
