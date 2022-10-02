@@ -16,7 +16,7 @@ library LibMToken {
     using WadRayMath for uint256;
     using GPv2SafeERC20 for IERC20;
 
-    bytes32 internal constant STORAGE_SLOT = keccak256("mToken.storage");
+    bytes32 internal constant STORAGE_SLOT = keccak256("delegationMToken.storage");
 
     bytes internal constant EIP712_REVISION = bytes("1");
     bytes32 internal constant EIP712_DOMAIN = keccak256("EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)");

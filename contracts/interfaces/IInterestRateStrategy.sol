@@ -1,14 +1,14 @@
 // SPDX-License-Identifier: AGPL-3.0
 pragma solidity 0.8.10;
 
-import {DataTypes} from '../protocol/libraries/types/DataTypes.sol';
+import { DataTypes } from "../protocol/libraries/types/DataTypes.sol";
 
 /**
- * @title IReserveInterestRateStrategy
+ * @title IInterestRateStrategy
  * @author Aave
  * @notice Interface for the calculation of the interest rates
  */
-interface IReserveInterestRateStrategy {
+interface IInterestRateStrategy {
   /**
    * @notice Returns the base variable borrow rate
    * @return The base variable borrow rate, expressed in ray
@@ -28,7 +28,9 @@ interface IReserveInterestRateStrategy {
    * @return stableBorrowRate The stable borrow rate expressed in rays
    * @return variableBorrowRate The variable borrow rate expressed in rays
    **/
-  function calculateInterestRates(DataTypes.CalculateInterestRatesParams memory params)
+  function calculateInterestRates(
+    DataTypes.CalculateInterestRatesParams memory params
+  )
     external
     view
     returns (

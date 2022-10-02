@@ -19,7 +19,7 @@ contract InterestRateStrategy is OwnableInternal {
      * @param stableRateExcessOffset The premium on top of stable rate when there stable debt surpass the threshold
      * @param optimalStableToTotalDebtRatio The optimal stable debt to total debt ratio of the reserve
      */
-    function initializeInterestRateStrategy(
+    function initialize(
         uint256 optimalUsageRatio,
         uint256 baseVariableBorrowRate,
         uint256 variableRateSlope1,
@@ -30,7 +30,7 @@ contract InterestRateStrategy is OwnableInternal {
         uint256 stableRateExcessOffset,
         uint256 optimalStableToTotalDebtRatio
     ) external onlyOwner {
-        LibInterestRateStrategy.layout().initializeInterestRateStrategy(   
+        LibInterestRateStrategy.layout().initialize(   
             optimalUsageRatio,
             baseVariableBorrowRate,
             variableRateSlope1,
@@ -96,12 +96,12 @@ contract InterestRateStrategy is OwnableInternal {
     return LibInterestRateStrategy.getBaseStableBorrowRate();
   }
 
-  /// @inheritdoc IReserveInterestRateStrategy
+  /// @inheritdoc IInterestRateStrategy
   function getBaseVariableBorrowRate() external view returns (uint256) {
     return LibInterestRateStrategy.getBaseVariableBorrowRate();
   }
 
-  /// @inheritdoc IReserveInterestRateStrategy
+  /// @inheritdoc IInterestRateStrategy
   function getMaxVariableBorrowRate() external view returns (uint256) {
     return LibInterestRateStrategy.getMaxVariableBorrowRate();
   }

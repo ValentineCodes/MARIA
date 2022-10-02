@@ -14,7 +14,7 @@ contract Pool is IPool, OwnableInternal {
         external
         onlyOwner
     {
-        LibPool.layout().initializePool();
+        LibPool.initializePool();
     }
 
     /// @inheritdoc IPool
@@ -23,7 +23,14 @@ contract Pool is IPool, OwnableInternal {
         uint256 amount,
         address onBehalfOf,
         uint16 referralCode
-    ) external override {}
+    ) external override {
+        LibPool.supply(
+            address asset,
+            uint256 amount,
+            address onBehalfOf,
+            uint16 referralCode
+        );
+    }
 
     /// @inheritdoc IPool
     function supplyWithPermit(

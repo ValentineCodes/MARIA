@@ -1,9 +1,11 @@
 // SPDX-License-Identifier: BUSL-1.1
 pragma solidity 0.8.10;
 
-import {Errors} from '../helpers/Errors.sol';
-import {DataTypes} from '../types/DataTypes.sol';
-import {ReserveConfiguration} from './ReserveConfiguration.sol';
+import { Errors } from "../helpers/Errors.sol";
+import { DataTypes } from "../types/DataTypes.sol";
+import { ReserveConfiguration } from "./ReserveConfiguration.sol";
+import { LibPool } from "../facets/LibPool.sol";
+import { LayoutTypes } from "../types/LayoutTypes.sol";
 
 /**
  * @title UserConfiguration library
@@ -30,7 +32,10 @@ library UserConfiguration {
     bool borrowing
   ) internal {
     unchecked {
-      require(reserveIndex < ReserveConfiguration.MAX_RESERVES_COUNT, Errors.INVALID_RESERVE_INDEX);
+      require(
+        reserveIndex < ReserveConfiguration.MAX_RESERVES_COUNT,
+        Errors.INVALID_RESERVE_INDEX
+      );
       uint256 bit = 1 << (reserveIndex << 1);
       if (borrowing) {
         self.data |= bit;
@@ -52,7 +57,10 @@ library UserConfiguration {
     bool usingAsCollateral
   ) internal {
     unchecked {
-      require(reserveIndex < ReserveConfiguration.MAX_RESERVES_COUNT, Errors.INVALID_RESERVE_INDEX);
+      require(
+        reserveIndex < ReserveConfiguration.MAX_RESERVES_COUNT,
+        Errors.INVALID_RESERVE_INDEX
+      );
       uint256 bit = 1 << ((reserveIndex << 1) + 1);
       if (usingAsCollateral) {
         self.data |= bit;
@@ -73,7 +81,10 @@ library UserConfiguration {
     uint256 reserveIndex
   ) internal pure returns (bool) {
     unchecked {
-      require(reserveIndex < ReserveConfiguration.MAX_RESERVES_COUNT, Errors.INVALID_RESERVE_INDEX);
+      require(
+        reserveIndex < ReserveConfiguration.MAX_RESERVES_COUNT,
+        Errors.INVALID_RESERVE_INDEX
+      );
       return (self.data >> (reserveIndex << 1)) & 3 != 0;
     }
   }
@@ -84,13 +95,15 @@ library UserConfiguration {
    * @param reserveIndex The index of the reserve in the bitmap
    * @return True if the user has been using a reserve for borrowing, false otherwise
    **/
-  function isBorrowing(DataTypes.UserConfigurationMap memory self, uint256 reserveIndex)
-    internal
-    pure
-    returns (bool)
-  {
+  function isBorrowing(
+    DataTypes.UserConfigurationMap memory self,
+    uint256 reserveIndex
+  ) internal pure returns (bool) {
     unchecked {
-      require(reserveIndex < ReserveConfiguration.MAX_RESERVES_COUNT, Errors.INVALID_RESERVE_INDEX);
+      require(
+        reserveIndex < ReserveConfiguration.MAX_RESERVES_COUNT,
+        Errors.INVALID_RESERVE_INDEX
+      );
       return (self.data >> (reserveIndex << 1)) & 1 != 0;
     }
   }
@@ -101,13 +114,15 @@ library UserConfiguration {
    * @param reserveIndex The index of the reserve in the bitmap
    * @return True if the user has been using a reserve as collateral, false otherwise
    **/
-  function isUsingAsCollateral(DataTypes.UserConfigurationMap memory self, uint256 reserveIndex)
-    internal
-    pure
-    returns (bool)
-  {
+  function isUsingAsCollateral(
+    DataTypes.UserConfigurationMap memory self,
+    uint256 reserveIndex
+  ) internal pure returns (bool) {
     unchecked {
-      require(reserveIndex < ReserveConfiguration.MAX_RESERVES_COUNT, Errors.INVALID_RESERVE_INDEX);
+      require(
+        reserveIndex < ReserveConfiguration.MAX_RESERVES_COUNT,
+        Errors.INVALID_RESERVE_INDEX
+      );
       return (self.data >> ((reserveIndex << 1) + 1)) & 1 != 0;
     }
   }
@@ -146,7 +161,11 @@ library UserConfiguration {
    * @param self The configuration object
    * @return True if the user has been supplying as collateral one reserve, false otherwise
    **/
-  function isBorrowingOne(DataTypes.UserConfigurationMap memory self) internal pure returns (bool) {
+  function isBorrowingOne(DataTypes.UserConfigurationMap memory self)
+    internal
+    pure
+    returns (bool)
+  {
     uint256 borrowingData = self.data & BORROWING_MASK;
     return borrowingData != 0 && (borrowingData & (borrowingData - 1) == 0);
   }
@@ -156,7 +175,11 @@ library UserConfiguration {
    * @param self The configuration object
    * @return True if the user has been borrowing any reserve, false otherwise
    **/
-  function isBorrowingAny(DataTypes.UserConfigurationMap memory self) internal pure returns (bool) {
+  function isBorrowingAny(DataTypes.UserConfigurationMap memory self)
+    internal
+    pure
+    returns (bool)
+  {
     return self.data & BORROWING_MASK != 0;
   }
 
@@ -165,24 +188,22 @@ library UserConfiguration {
    * @param self The configuration object
    * @return True if the user has not been borrowing or supplying any reserve, false otherwise
    **/
-  function isEmpty(DataTypes.UserConfigurationMap memory self) internal pure returns (bool) {
+  function isEmpty(DataTypes.UserConfigurationMap memory self)
+    internal
+    pure
+    returns (bool)
+  {
     return self.data == 0;
   }
 
   /**
    * @notice Returns the Isolation Mode state of the user
    * @param self The configuration object
-   * @param reservesData The state of all the reserves
-   * @param reservesList The addresses of all the active reserves
    * @return True if the user is in isolation mode, false otherwise
    * @return The address of the only asset used as collateral
    * @return The debt ceiling of the reserve
    */
-  function getIsolationModeState(
-    DataTypes.UserConfigurationMap memory self,
-    mapping(address => DataTypes.ReserveData) storage reservesData,
-    mapping(uint256 => address) storage reservesList
-  )
+  function getIsolationModeState(DataTypes.UserConfigurationMap memory self)
     internal
     view
     returns (
@@ -191,11 +212,16 @@ library UserConfiguration {
       uint256
     )
   {
+    LayoutTypes.PoolLayout storage s = LibPool.layout();
+
     if (isUsingAsCollateralOne(self)) {
       uint256 assetId = _getFirstAssetIdByMask(self, COLLATERAL_MASK);
 
-      address assetAddress = reservesList[assetId];
-      uint256 ceiling = reservesData[assetAddress].configuration.getDebtCeiling();
+      address assetAddress = s._reservesList[assetId];
+      uint256 ceiling = s
+        ._reserves[assetAddress]
+        .configuration
+        .getDebtCeiling();
       if (ceiling != 0) {
         return (true, assetAddress, ceiling);
       }
@@ -206,20 +232,20 @@ library UserConfiguration {
   /**
    * @notice Returns the siloed borrowing state for the user
    * @param self The configuration object
-   * @param reservesData The data of all the reserves
-   * @param reservesList The reserve list
    * @return True if the user has borrowed a siloed asset, false otherwise
    * @return The address of the only borrowed asset
    */
-  function getSiloedBorrowingState(
-    DataTypes.UserConfigurationMap memory self,
-    mapping(address => DataTypes.ReserveData) storage reservesData,
-    mapping(uint256 => address) storage reservesList
-  ) internal view returns (bool, address) {
+  function getSiloedBorrowingState(DataTypes.UserConfigurationMap memory self)
+    internal
+    view
+    returns (bool, address)
+  {
+    LayoutTypes.PoolLayout storage s = LibPool.layout();
+
     if (isBorrowingOne(self)) {
       uint256 assetId = _getFirstAssetIdByMask(self, BORROWING_MASK);
-      address assetAddress = reservesList[assetId];
-      if (reservesData[assetAddress].configuration.getSiloedBorrowing()) {
+      address assetAddress = s._reservesList[assetId];
+      if (s._reserves[assetAddress].configuration.getSiloedBorrowing()) {
         return (true, assetAddress);
       }
     }
@@ -232,11 +258,10 @@ library UserConfiguration {
    * @param self The configuration object
    * @return The index of the first asset flagged in the bitmap once the corresponding mask is applied
    */
-  function _getFirstAssetIdByMask(DataTypes.UserConfigurationMap memory self, uint256 mask)
-    internal
-    pure
-    returns (uint256)
-  {
+  function _getFirstAssetIdByMask(
+    DataTypes.UserConfigurationMap memory self,
+    uint256 mask
+  ) internal pure returns (uint256) {
     unchecked {
       uint256 bitmapData = self.data & mask;
       uint256 firstAssetPosition = bitmapData & ~(bitmapData - 1);
