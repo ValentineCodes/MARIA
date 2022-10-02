@@ -1,16 +1,16 @@
 // SPDX-License-Identifier: AGPL-3.0
 pragma solidity 0.8.10;
 
-import {IERC20} from '../dependencies/openzeppelin/contracts/IERC20.sol';
-import {IScaledBalanceToken} from './IScaledBalanceToken.sol';
-import {IInitializableAToken} from './IInitializableAToken.sol';
+import { IERC20 } from "../dependencies/openzeppelin/contracts/IERC20.sol";
+import { IScaledBalanceToken } from "./IScaledBalanceToken.sol";
+import { IInitializableAToken } from "./IInitializableAToken.sol";
 
 /**
- * @title IAToken
+ * @title IMToken
  * @author Aave
  * @notice Defines the basic interface for an AToken.
  **/
-interface IAToken is IERC20, IScaledBalanceToken, IInitializableAToken {
+interface IMToken is IERC20, IScaledBalanceToken, IInitializableAToken {
   /**
    * @dev Emitted during the transfer action
    * @param from The user whose tokens are being transferred
@@ -18,7 +18,12 @@ interface IAToken is IERC20, IScaledBalanceToken, IInitializableAToken {
    * @param value The amount being transferred
    * @param index The next liquidity index of the reserve
    **/
-  event BalanceTransfer(address indexed from, address indexed to, uint256 value, uint256 index);
+  event BalanceTransfer(
+    address indexed from,
+    address indexed to,
+    uint256 value,
+    uint256 index
+  );
 
   /**
    * @notice Mints `amount` aTokens to `user`

@@ -1,19 +1,19 @@
 // SPDX-License-Identifier: BUSL-1.1
 pragma solidity 0.8.10;
 
-import {GPv2SafeERC20} from '../../../dependencies/gnosis/contracts/GPv2SafeERC20.sol';
-import {SafeCast} from '../../../dependencies/openzeppelin/contracts/SafeCast.sol';
-import {IERC20} from '../../../dependencies/openzeppelin/contracts/IERC20.sol';
-import {IStableDebtToken} from '../../../interfaces/IStableDebtToken.sol';
-import {IVariableDebtToken} from '../../../interfaces/IVariableDebtToken.sol';
-import {IAToken} from '../../../interfaces/IAToken.sol';
-import {UserConfiguration} from '../configuration/UserConfiguration.sol';
-import {ReserveConfiguration} from '../configuration/ReserveConfiguration.sol';
-import {Helpers} from '../helpers/Helpers.sol';
-import {DataTypes} from '../types/DataTypes.sol';
-import {ValidationLogic} from './ValidationLogic.sol';
-import {ReserveLogic} from './ReserveLogic.sol';
-import {IsolationModeLogic} from './IsolationModeLogic.sol';
+import { GPv2SafeERC20 } from "../../../dependencies/gnosis/contracts/GPv2SafeERC20.sol";
+import { SafeCast } from "../../../dependencies/openzeppelin/contracts/SafeCast.sol";
+import { IERC20 } from "../../../dependencies/openzeppelin/contracts/IERC20.sol";
+import { IStableDebtToken } from "../../../interfaces/IStableDebtToken.sol";
+import { IVariableDebtToken } from "../../../interfaces/IVariableDebtToken.sol";
+import { IMToken } from "../../../interfaces/IMToken.sol";
+import { UserConfiguration } from "../configuration/UserConfiguration.sol";
+import { ReserveConfiguration } from "../configuration/ReserveConfiguration.sol";
+import { Helpers } from "../helpers/Helpers.sol";
+import { DataTypes } from "../types/DataTypes.sol";
+import { ValidationLogic } from "./ValidationLogic.sol";
+import { ReserveLogic } from "./ReserveLogic.sol";
+import { IsolationModeLogic } from "./IsolationModeLogic.sol";
 
 /**
  * @title BorrowLogic library
@@ -45,7 +45,10 @@ library BorrowLogic {
     uint256 amount,
     bool useATokens
   );
-  event RebalanceStableBorrowRate(address indexed reserve, address indexed user);
+  event RebalanceStableBorrowRate(
+    address indexed reserve,
+    address indexed user
+  );
   event SwapBorrowRateMode(
     address indexed reserve,
     address indexed user,
@@ -123,9 +126,15 @@ library BorrowLogic {
         currentStableRate
       );
     } else {
-      (isFirstBorrowing, reserveCache.nextScaledVariableDebt) = IVariableDebtToken(
-        reserveCache.variableDebtTokenAddress
-      ).mint(params.user, params.onBehalfOf, params.amount, reserveCache.nextVariableBorrowIndex);
+      (
+        isFirstBorrowing,
+        reserveCache.nextScaledVariableDebt
+      ) = IVariableDebtToken(reserveCache.variableDebtTokenAddress).mint(
+        params.user,
+        params.onBehalfOf,
+        params.amount,
+        reserveCache.nextVariableBorrowIndex
+      );
     }
 
     if (isFirstBorrowing) {
@@ -133,8 +142,9 @@ library BorrowLogic {
     }
 
     if (isolationModeActive) {
-      uint256 nextIsolationModeTotalDebt = reservesData[isolationModeCollateralAddress]
-        .isolationModeTotalDebt += (params.amount /
+      uint256 nextIsolationModeTotalDebt = reservesData[
+        isolationModeCollateralAddress
+      ].isolationModeTotalDebt += (params.amount /
         10 **
           (reserveCache.reserveConfiguration.getDecimals() -
             ReserveConfiguration.DEBT_CEILING_DECIMALS)).toUint128();
@@ -152,7 +162,10 @@ library BorrowLogic {
     );
 
     if (params.releaseUnderlying) {
-      IAToken(reserveCache.aTokenAddress).transferUnderlyingTo(params.user, params.amount);
+      IMToken(reserveCache.aTokenAddress).transferUnderlyingTo(
+        params.user,
+        params.amount
+      );
     }
 
     emit Borrow(
@@ -207,13 +220,14 @@ library BorrowLogic {
     );
 
     // Amount of stable or variable debt
-    uint256 paybackAmount = params.interestRateMode == DataTypes.InterestRateMode.STABLE
+    uint256 paybackAmount = params.interestRateMode ==
+      DataTypes.InterestRateMode.STABLE
       ? stableDebt
       : variableDebt;
 
     // Allows a user to repay with aTokens without leaving dust from interest.
     if (params.useATokens && params.amount == type(uint256).max) {
-      params.amount = IAToken(reserveCache.aTokenAddress).balanceOf(msg.sender);
+      params.amount = IMToken(reserveCache.aTokenAddress).balanceOf(msg.sender);
     }
 
     // Ensure amount to repay is less than debt
@@ -223,13 +237,21 @@ library BorrowLogic {
 
     // Burn debt tokens
     if (params.interestRateMode == DataTypes.InterestRateMode.STABLE) {
-      (reserveCache.nextTotalStableDebt, reserveCache.nextAvgStableBorrowRate) = IStableDebtToken(
-        reserveCache.stableDebtTokenAddress
-      ).burn(params.onBehalfOf, paybackAmount);
+      (
+        reserveCache.nextTotalStableDebt,
+        reserveCache.nextAvgStableBorrowRate
+      ) = IStableDebtToken(reserveCache.stableDebtTokenAddress).burn(
+        params.onBehalfOf,
+        paybackAmount
+      );
     } else {
       reserveCache.nextScaledVariableDebt = IVariableDebtToken(
         reserveCache.variableDebtTokenAddress
-      ).burn(params.onBehalfOf, paybackAmount, reserveCache.nextVariableBorrowIndex);
+      ).burn(
+          params.onBehalfOf,
+          paybackAmount,
+          reserveCache.nextVariableBorrowIndex
+        );
     }
 
     reserve.updateInterestRates(
@@ -253,18 +275,31 @@ library BorrowLogic {
     );
 
     if (params.useATokens) {
-      IAToken(reserveCache.aTokenAddress).burn(
+      IMToken(reserveCache.aTokenAddress).burn(
         msg.sender,
         reserveCache.aTokenAddress,
         paybackAmount,
         reserveCache.nextLiquidityIndex
       );
     } else {
-      IERC20(params.asset).safeTransferFrom(msg.sender, reserveCache.aTokenAddress, paybackAmount);
-      IAToken(reserveCache.aTokenAddress).handleRepayment(msg.sender, paybackAmount);
+      IERC20(params.asset).safeTransferFrom(
+        msg.sender,
+        reserveCache.aTokenAddress,
+        paybackAmount
+      );
+      IMToken(reserveCache.aTokenAddress).handleRepayment(
+        msg.sender,
+        paybackAmount
+      );
     }
 
-    emit Repay(params.asset, params.onBehalfOf, msg.sender, paybackAmount, params.useATokens);
+    emit Repay(
+      params.asset,
+      params.onBehalfOf,
+      msg.sender,
+      paybackAmount,
+      params.useATokens
+    );
 
     return paybackAmount;
   }
@@ -286,15 +321,29 @@ library BorrowLogic {
     DataTypes.ReserveCache memory reserveCache = reserve.cache();
     reserve.updateState(reserveCache);
 
-    ValidationLogic.validateRebalanceStableBorrowRate(reserve, reserveCache, asset);
+    ValidationLogic.validateRebalanceStableBorrowRate(
+      reserve,
+      reserveCache,
+      asset
+    );
 
-    IStableDebtToken stableDebtToken = IStableDebtToken(reserveCache.stableDebtTokenAddress);
+    IStableDebtToken stableDebtToken = IStableDebtToken(
+      reserveCache.stableDebtTokenAddress
+    );
     uint256 stableDebt = IERC20(address(stableDebtToken)).balanceOf(user);
 
     stableDebtToken.burn(user, stableDebt);
 
-    (, reserveCache.nextTotalStableDebt, reserveCache.nextAvgStableBorrowRate) = stableDebtToken
-      .mint(user, user, stableDebt, reserve.currentStableBorrowRate);
+    (
+      ,
+      reserveCache.nextTotalStableDebt,
+      reserveCache.nextAvgStableBorrowRate
+    ) = stableDebtToken.mint(
+      user,
+      user,
+      stableDebt,
+      reserve.currentStableBorrowRate
+    );
 
     reserve.updateInterestRates(reserveCache, asset, 0, 0);
 
@@ -334,21 +383,37 @@ library BorrowLogic {
     );
 
     if (interestRateMode == DataTypes.InterestRateMode.STABLE) {
-      (reserveCache.nextTotalStableDebt, reserveCache.nextAvgStableBorrowRate) = IStableDebtToken(
-        reserveCache.stableDebtTokenAddress
-      ).burn(msg.sender, stableDebt);
+      (
+        reserveCache.nextTotalStableDebt,
+        reserveCache.nextAvgStableBorrowRate
+      ) = IStableDebtToken(reserveCache.stableDebtTokenAddress).burn(
+        msg.sender,
+        stableDebt
+      );
 
       (, reserveCache.nextScaledVariableDebt) = IVariableDebtToken(
         reserveCache.variableDebtTokenAddress
-      ).mint(msg.sender, msg.sender, stableDebt, reserveCache.nextVariableBorrowIndex);
+      ).mint(
+          msg.sender,
+          msg.sender,
+          stableDebt,
+          reserveCache.nextVariableBorrowIndex
+        );
     } else {
       reserveCache.nextScaledVariableDebt = IVariableDebtToken(
         reserveCache.variableDebtTokenAddress
       ).burn(msg.sender, variableDebt, reserveCache.nextVariableBorrowIndex);
 
-      (, reserveCache.nextTotalStableDebt, reserveCache.nextAvgStableBorrowRate) = IStableDebtToken(
-        reserveCache.stableDebtTokenAddress
-      ).mint(msg.sender, msg.sender, variableDebt, reserve.currentStableBorrowRate);
+      (
+        ,
+        reserveCache.nextTotalStableDebt,
+        reserveCache.nextAvgStableBorrowRate
+      ) = IStableDebtToken(reserveCache.stableDebtTokenAddress).mint(
+        msg.sender,
+        msg.sender,
+        variableDebt,
+        reserve.currentStableBorrowRate
+      );
     }
 
     reserve.updateInterestRates(reserveCache, asset, 0, 0);

@@ -1,18 +1,18 @@
 // SPDX-License-Identifier: BUSL-1.1
 pragma solidity 0.8.10;
 
-import {IERC20} from '../../../dependencies/openzeppelin/contracts/IERC20.sol';
-import {GPv2SafeERC20} from '../../../dependencies/gnosis/contracts/GPv2SafeERC20.sol';
-import {SafeCast} from '../../../dependencies/openzeppelin/contracts/SafeCast.sol';
-import {IAToken} from '../../../interfaces/IAToken.sol';
-import {DataTypes} from '../types/DataTypes.sol';
-import {UserConfiguration} from '../configuration/UserConfiguration.sol';
-import {ReserveConfiguration} from '../configuration/ReserveConfiguration.sol';
-import {WadRayMath} from '../math/WadRayMath.sol';
-import {PercentageMath} from '../math/PercentageMath.sol';
-import {Errors} from '../helpers/Errors.sol';
-import {ValidationLogic} from './ValidationLogic.sol';
-import {ReserveLogic} from './ReserveLogic.sol';
+import { IERC20 } from "../../../dependencies/openzeppelin/contracts/IERC20.sol";
+import { GPv2SafeERC20 } from "../../../dependencies/gnosis/contracts/GPv2SafeERC20.sol";
+import { SafeCast } from "../../../dependencies/openzeppelin/contracts/SafeCast.sol";
+import { IMToken } from "../../../interfaces/IMToken.sol";
+import { DataTypes } from "../types/DataTypes.sol";
+import { UserConfiguration } from "../configuration/UserConfiguration.sol";
+import { ReserveConfiguration } from "../configuration/ReserveConfiguration.sol";
+import { WadRayMath } from "../math/WadRayMath.sol";
+import { PercentageMath } from "../math/PercentageMath.sol";
+import { Errors } from "../helpers/Errors.sol";
+import { ValidationLogic } from "./ValidationLogic.sol";
+import { ReserveLogic } from "./ReserveLogic.sol";
 
 library BridgeLogic {
   using ReserveLogic for DataTypes.ReserveCache;
@@ -25,7 +25,10 @@ library BridgeLogic {
   using GPv2SafeERC20 for IERC20;
 
   // See `IPool` for descriptions
-  event ReserveUsedAsCollateralEnabled(address indexed reserve, address indexed user);
+  event ReserveUsedAsCollateralEnabled(
+    address indexed reserve,
+    address indexed user
+  );
   event MintUnbacked(
     address indexed reserve,
     address user,
@@ -33,7 +36,12 @@ library BridgeLogic {
     uint256 amount,
     uint16 indexed referralCode
   );
-  event BackUnbacked(address indexed reserve, address indexed backer, uint256 amount, uint256 fee);
+  event BackUnbacked(
+    address indexed reserve,
+    address indexed backer,
+    uint256 amount,
+    uint256 fee
+  );
 
   /**
    * @notice Mint unbacked aTokens to a user and updates the unbacked for the reserve.
@@ -66,20 +74,25 @@ library BridgeLogic {
 
     ValidationLogic.validateSupply(reserveCache, amount);
 
-    uint256 unbackedMintCap = reserveCache.reserveConfiguration.getUnbackedMintCap();
+    uint256 unbackedMintCap = reserveCache
+      .reserveConfiguration
+      .getUnbackedMintCap();
     uint256 reserveDecimals = reserveCache.reserveConfiguration.getDecimals();
 
     // Stores aToken amount in reserve and total unbacked aToken amount in memory
     uint256 unbacked = reserve.unbacked += amount.toUint128();
 
     // Ensures the current unbacked aTokens count does not exceed the mint cap
-    require(unbacked <= unbackedMintCap * (10**reserveDecimals), Errors.UNBACKED_MINT_CAP_EXCEEDED);
+    require(
+      unbacked <= unbackedMintCap * (10**reserveDecimals),
+      Errors.UNBACKED_MINT_CAP_EXCEEDED
+    );
 
     // Updates the liquidity, borrow and supply interest rates
     reserve.updateInterestRates(reserveCache, asset, 0, 0);
 
     // Mint aTokens to recipient and returns true if previous recipient balance was 0
-    bool isFirstSupply = IAToken(reserveCache.aTokenAddress).mint(
+    bool isFirstSupply = IMToken(reserveCache.aTokenAddress).mint(
       msg.sender,
       onBehalfOf,
       amount,
@@ -125,7 +138,9 @@ library BridgeLogic {
     // Updates the liquidity index and the variable borrow index
     reserve.updateState(reserveCache);
 
-    uint256 backingAmount = (amount < reserve.unbacked) ? amount : reserve.unbacked;
+    uint256 backingAmount = (amount < reserve.unbacked)
+      ? amount
+      : reserve.unbacked;
 
     uint256 feeToProtocol = fee.percentMul(protocolFeeBps);
     uint256 feeToLP = fee - feeToProtocol;
@@ -137,7 +152,9 @@ library BridgeLogic {
       feeToLP
     );
 
-    reserve.accruedToTreasury += feeToProtocol.rayDiv(reserveCache.nextLiquidityIndex).toUint128();
+    reserve.accruedToTreasury += feeToProtocol
+      .rayDiv(reserveCache.nextLiquidityIndex)
+      .toUint128();
 
     reserve.unbacked -= backingAmount.toUint128();
 
@@ -145,7 +162,11 @@ library BridgeLogic {
     reserve.updateInterestRates(reserveCache, asset, added, 0);
 
     // Transfers the asset to the aTokenAddress
-    IERC20(asset).safeTransferFrom(msg.sender, reserveCache.aTokenAddress, added);
+    IERC20(asset).safeTransferFrom(
+      msg.sender,
+      reserveCache.aTokenAddress,
+      added
+    );
 
     emit BackUnbacked(asset, msg.sender, backingAmount, fee);
   }

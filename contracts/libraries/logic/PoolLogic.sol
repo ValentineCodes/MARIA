@@ -1,17 +1,17 @@
 // SPDX-License-Identifier: BUSL-1.1
 pragma solidity 0.8.10;
 
-import {GPv2SafeERC20} from '../../../dependencies/gnosis/contracts/GPv2SafeERC20.sol';
-import {Address} from '../../../dependencies/openzeppelin/contracts/Address.sol';
-import {IERC20} from '../../../dependencies/openzeppelin/contracts/IERC20.sol';
-import {IAToken} from '../../../interfaces/IAToken.sol';
-import {ReserveConfiguration} from '../configuration/ReserveConfiguration.sol';
-import {Errors} from '../helpers/Errors.sol';
-import {WadRayMath} from '../math/WadRayMath.sol';
-import {DataTypes} from '../types/DataTypes.sol';
-import {ReserveLogic} from './ReserveLogic.sol';
-import {ValidationLogic} from './ValidationLogic.sol';
-import {GenericLogic} from './GenericLogic.sol';
+import { GPv2SafeERC20 } from "../../../dependencies/gnosis/contracts/GPv2SafeERC20.sol";
+import { Address } from "../../../dependencies/openzeppelin/contracts/Address.sol";
+import { IERC20 } from "../../../dependencies/openzeppelin/contracts/IERC20.sol";
+import { IMToken } from "../../../interfaces/IMToken.sol";
+import { ReserveConfiguration } from "../configuration/ReserveConfiguration.sol";
+import { Errors } from "../helpers/Errors.sol";
+import { WadRayMath } from "../math/WadRayMath.sol";
+import { DataTypes } from "../types/DataTypes.sol";
+import { ReserveLogic } from "./ReserveLogic.sol";
+import { ValidationLogic } from "./ValidationLogic.sol";
+import { GenericLogic } from "./GenericLogic.sol";
 
 /**
  * @title PoolLogic library
@@ -60,7 +60,10 @@ library PoolLogic {
       }
     }
 
-    require(params.reservesCount < params.maxNumberReserves, Errors.NO_MORE_RESERVES_ALLOWED);
+    require(
+      params.reservesCount < params.maxNumberReserves,
+      Errors.NO_MORE_RESERVES_ALLOWED
+    );
     reservesData[params.asset].id = params.reservesCount;
     reservesList[params.reservesCount] = params.asset;
     return true;
@@ -105,7 +108,10 @@ library PoolLogic {
         reserve.accruedToTreasury = 0;
         uint256 normalizedIncome = reserve.getNormalizedIncome();
         uint256 amountToMint = accruedToTreasury.rayMul(normalizedIncome);
-        IAToken(reserve.aTokenAddress).mintToTreasury(amountToMint, normalizedIncome);
+        IMToken(reserve.aTokenAddress).mintToTreasury(
+          amountToMint,
+          normalizedIncome
+        );
 
         emit MintedToTreasury(assetAddress, amountToMint);
       }
@@ -122,7 +128,10 @@ library PoolLogic {
     mapping(address => DataTypes.ReserveData) storage reservesData,
     address asset
   ) external {
-    require(reservesData[asset].configuration.getDebtCeiling() == 0, Errors.DEBT_CEILING_NOT_ZERO);
+    require(
+      reservesData[asset].configuration.getDebtCeiling() == 0,
+      Errors.DEBT_CEILING_NOT_ZERO
+    );
     reservesData[asset].isolationModeTotalDebt = 0;
     emit IsolationModeTotalDebtUpdated(asset, 0);
   }
@@ -181,7 +190,12 @@ library PoolLogic {
       currentLiquidationThreshold,
       healthFactor,
 
-    ) = GenericLogic.calculateUserAccountData(reservesData, reservesList, eModeCategories, params);
+    ) = GenericLogic.calculateUserAccountData(
+      reservesData,
+      reservesList,
+      eModeCategories,
+      params
+    );
 
     availableBorrowsBase = GenericLogic.calculateAvailableBorrows(
       totalCollateralBase,

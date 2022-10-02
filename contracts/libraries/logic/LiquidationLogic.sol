@@ -1,23 +1,23 @@
 // SPDX-License-Identifier: BUSL-1.1
 pragma solidity 0.8.10;
 
-import {IERC20} from '../../../dependencies/openzeppelin/contracts//IERC20.sol';
-import {GPv2SafeERC20} from '../../../dependencies/gnosis/contracts/GPv2SafeERC20.sol';
-import {PercentageMath} from '../../libraries/math/PercentageMath.sol';
-import {WadRayMath} from '../../libraries/math/WadRayMath.sol';
-import {Helpers} from '../../libraries/helpers/Helpers.sol';
-import {DataTypes} from '../../libraries/types/DataTypes.sol';
-import {ReserveLogic} from './ReserveLogic.sol';
-import {ValidationLogic} from './ValidationLogic.sol';
-import {GenericLogic} from './GenericLogic.sol';
-import {IsolationModeLogic} from './IsolationModeLogic.sol';
-import {EModeLogic} from './EModeLogic.sol';
-import {UserConfiguration} from '../../libraries/configuration/UserConfiguration.sol';
-import {ReserveConfiguration} from '../../libraries/configuration/ReserveConfiguration.sol';
-import {IAToken} from '../../../interfaces/IAToken.sol';
-import {IStableDebtToken} from '../../../interfaces/IStableDebtToken.sol';
-import {IVariableDebtToken} from '../../../interfaces/IVariableDebtToken.sol';
-import {IPriceOracleGetter} from '../../../interfaces/IPriceOracleGetter.sol';
+import { IERC20 } from "../../../dependencies/openzeppelin/contracts//IERC20.sol";
+import { GPv2SafeERC20 } from "../../../dependencies/gnosis/contracts/GPv2SafeERC20.sol";
+import { PercentageMath } from "../../libraries/math/PercentageMath.sol";
+import { WadRayMath } from "../../libraries/math/WadRayMath.sol";
+import { Helpers } from "../../libraries/helpers/Helpers.sol";
+import { DataTypes } from "../../libraries/types/DataTypes.sol";
+import { ReserveLogic } from "./ReserveLogic.sol";
+import { ValidationLogic } from "./ValidationLogic.sol";
+import { GenericLogic } from "./GenericLogic.sol";
+import { IsolationModeLogic } from "./IsolationModeLogic.sol";
+import { EModeLogic } from "./EModeLogic.sol";
+import { UserConfiguration } from "../../libraries/configuration/UserConfiguration.sol";
+import { ReserveConfiguration } from "../../libraries/configuration/ReserveConfiguration.sol";
+import { IMToken } from "../../../interfaces/IMToken.sol";
+import { IStableDebtToken } from "../../../interfaces/IStableDebtToken.sol";
+import { IVariableDebtToken } from "../../../interfaces/IVariableDebtToken.sol";
+import { IPriceOracleGetter } from "../../../interfaces/IPriceOracleGetter.sol";
 
 /**
  * @title LiquidationLogic library
@@ -34,8 +34,14 @@ library LiquidationLogic {
   using GPv2SafeERC20 for IERC20;
 
   // See `IPool` for descriptions
-  event ReserveUsedAsCollateralEnabled(address indexed reserve, address indexed user);
-  event ReserveUsedAsCollateralDisabled(address indexed reserve, address indexed user);
+  event ReserveUsedAsCollateralEnabled(
+    address indexed reserve,
+    address indexed user
+  );
+  event ReserveUsedAsCollateralDisabled(
+    address indexed reserve,
+    address indexed user
+  );
   event LiquidationCall(
     address indexed collateralAsset,
     address indexed debtAsset,
@@ -78,7 +84,7 @@ library LiquidationLogic {
     uint256 liquidationProtocolFeeAmount;
     address collateralPriceSource;
     address debtPriceSource;
-    IAToken collateralAToken;
+    IMToken collateralAToken;
     DataTypes.ReserveCache debtReserveCache;
   }
 
@@ -102,9 +108,13 @@ library LiquidationLogic {
   ) external {
     LiquidationCallLocalVars memory vars;
 
-    DataTypes.ReserveData storage collateralReserve = reservesData[params.collateralAsset];
+    DataTypes.ReserveData storage collateralReserve = reservesData[
+      params.collateralAsset
+    ];
     DataTypes.ReserveData storage debtReserve = reservesData[params.debtAsset];
-    DataTypes.UserConfigurationMap storage userConfig = usersConfig[params.user];
+    DataTypes.UserConfigurationMap storage userConfig = usersConfig[
+      params.user
+    ];
     vars.debtReserveCache = debtReserve.cache();
     debtReserve.updateState(vars.debtReserveCache);
 
@@ -121,11 +131,11 @@ library LiquidationLogic {
       })
     );
 
-    (vars.userVariableDebt, vars.userTotalDebt, vars.actualDebtToLiquidate) = _calculateDebt(
-      vars.debtReserveCache,
-      params,
-      vars.healthFactor
-    );
+    (
+      vars.userVariableDebt,
+      vars.userTotalDebt,
+      vars.actualDebtToLiquidate
+    ) = _calculateDebt(vars.debtReserveCache, params, vars.healthFactor);
 
     ValidationLogic.validateLiquidationCall(
       userConfig,
@@ -184,7 +194,14 @@ library LiquidationLogic {
     );
 
     if (params.receiveAToken) {
-      _liquidateATokens(reservesData, reservesList, usersConfig, collateralReserve, params, vars);
+      _liquidateATokens(
+        reservesData,
+        reservesList,
+        usersConfig,
+        collateralReserve,
+        params,
+        vars
+      );
     } else {
       _burnCollateralATokens(collateralReserve, params, vars);
     }
@@ -212,7 +229,7 @@ library LiquidationLogic {
       vars.actualDebtToLiquidate
     );
 
-    IAToken(vars.debtReserveCache.aTokenAddress).handleRepayment(
+    IMToken(vars.debtReserveCache.aTokenAddress).handleRepayment(
       msg.sender,
       vars.actualDebtToLiquidate
     );
@@ -240,7 +257,8 @@ library LiquidationLogic {
     DataTypes.ExecuteLiquidationCallParams memory params,
     LiquidationCallLocalVars memory vars
   ) internal {
-    DataTypes.ReserveCache memory collateralReserveCache = collateralReserve.cache();
+    DataTypes.ReserveCache memory collateralReserveCache = collateralReserve
+      .cache();
     collateralReserve.updateState(collateralReserveCache);
     collateralReserve.updateInterestRates(
       collateralReserveCache,
@@ -277,7 +295,8 @@ library LiquidationLogic {
     DataTypes.ExecuteLiquidationCallParams memory params,
     LiquidationCallLocalVars memory vars
   ) internal {
-    uint256 liquidatorPreviousATokenBalance = IERC20(vars.collateralAToken).balanceOf(msg.sender);
+    uint256 liquidatorPreviousATokenBalance = IERC20(vars.collateralAToken)
+      .balanceOf(msg.sender);
     vars.collateralAToken.transferOnLiquidation(
       params.user,
       msg.sender,
@@ -285,7 +304,9 @@ library LiquidationLogic {
     );
 
     if (liquidatorPreviousATokenBalance == 0) {
-      DataTypes.UserConfigurationMap storage liquidatorConfig = usersConfig[msg.sender];
+      DataTypes.UserConfigurationMap storage liquidatorConfig = usersConfig[
+        msg.sender
+      ];
       if (
         ValidationLogic.validateUseAsCollateral(
           reservesData,
@@ -323,7 +344,11 @@ library LiquidationLogic {
       if (vars.userVariableDebt != 0) {
         vars.debtReserveCache.nextScaledVariableDebt = IVariableDebtToken(
           vars.debtReserveCache.variableDebtTokenAddress
-        ).burn(params.user, vars.userVariableDebt, vars.debtReserveCache.nextVariableBorrowIndex);
+        ).burn(
+            params.user,
+            vars.userVariableDebt,
+            vars.debtReserveCache.nextVariableBorrowIndex
+          );
       }
       (
         vars.debtReserveCache.nextTotalStableDebt,
@@ -359,10 +384,8 @@ library LiquidationLogic {
       uint256
     )
   {
-    (uint256 userStableDebt, uint256 userVariableDebt) = Helpers.getUserCurrentDebt(
-      params.user,
-      debtReserveCache
-    );
+    (uint256 userStableDebt, uint256 userVariableDebt) = Helpers
+      .getUserCurrentDebt(params.user, debtReserveCache);
 
     uint256 userTotalDebt = userStableDebt + userVariableDebt;
 
@@ -397,20 +420,23 @@ library LiquidationLogic {
     internal
     view
     returns (
-      IAToken,
+      IMToken,
       address,
       address,
       uint256
     )
   {
-    IAToken collateralAToken = IAToken(collateralReserve.aTokenAddress);
-    uint256 liquidationBonus = collateralReserve.configuration.getLiquidationBonus();
+    IMToken collateralAToken = IMToken(collateralReserve.aTokenAddress);
+    uint256 liquidationBonus = collateralReserve
+      .configuration
+      .getLiquidationBonus();
 
     address collateralPriceSource = params.collateralAsset;
     address debtPriceSource = params.debtAsset;
 
     if (params.userEModeCategory != 0) {
-      address eModePriceSource = eModeCategories[params.userEModeCategory].priceSource;
+      address eModePriceSource = eModeCategories[params.userEModeCategory]
+        .priceSource;
 
       if (
         EModeLogic.isInEModeCategory(
@@ -418,7 +444,8 @@ library LiquidationLogic {
           collateralReserve.configuration.getEModeCategory()
         )
       ) {
-        liquidationBonus = eModeCategories[params.userEModeCategory].liquidationBonus;
+        liquidationBonus = eModeCategories[params.userEModeCategory]
+          .liquidationBonus;
 
         if (eModePriceSource != address(0)) {
           collateralPriceSource = eModePriceSource;
@@ -431,7 +458,12 @@ library LiquidationLogic {
       }
     }
 
-    return (collateralAToken, collateralPriceSource, debtPriceSource, liquidationBonus);
+    return (
+      collateralAToken,
+      collateralPriceSource,
+      debtPriceSource,
+      liquidationBonus
+    );
   }
 
   struct AvailableCollateralToLiquidateLocalVars {
@@ -490,7 +522,9 @@ library LiquidationLogic {
     vars.debtAssetPrice = oracle.getAssetPrice(debtAsset);
 
     vars.collateralDecimals = collateralReserve.configuration.getDecimals();
-    vars.debtAssetDecimals = debtReserveCache.reserveConfiguration.getDecimals();
+    vars.debtAssetDecimals = debtReserveCache
+      .reserveConfiguration
+      .getDecimals();
 
     unchecked {
       vars.collateralAssetUnit = 10**vars.collateralDecimals;
@@ -506,12 +540,16 @@ library LiquidationLogic {
       ((vars.debtAssetPrice * debtToCover * vars.collateralAssetUnit)) /
       (vars.collateralPrice * vars.debtAssetUnit);
 
-    vars.maxCollateralToLiquidate = vars.baseCollateral.percentMul(liquidationBonus);
+    vars.maxCollateralToLiquidate = vars.baseCollateral.percentMul(
+      liquidationBonus
+    );
 
     if (vars.maxCollateralToLiquidate > userCollateralBalance) {
       vars.collateralAmount = userCollateralBalance;
-      vars.debtAmountNeeded = ((vars.collateralPrice * vars.collateralAmount * vars.debtAssetUnit) /
-        (vars.debtAssetPrice * vars.collateralAssetUnit)).percentDiv(liquidationBonus);
+      vars.debtAmountNeeded = ((vars.collateralPrice *
+        vars.collateralAmount *
+        vars.debtAssetUnit) / (vars.debtAssetPrice * vars.collateralAssetUnit))
+        .percentDiv(liquidationBonus);
     } else {
       vars.collateralAmount = vars.maxCollateralToLiquidate;
       vars.debtAmountNeeded = debtToCover;

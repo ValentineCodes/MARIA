@@ -1,17 +1,17 @@
 // SPDX-License-Identifier: BUSL-1.1
 pragma solidity 0.8.10;
 
-import {IERC20} from '../../../dependencies/openzeppelin/contracts/IERC20.sol';
-import {GPv2SafeERC20} from '../../../dependencies/gnosis/contracts/GPv2SafeERC20.sol';
-import {IAToken} from '../../../interfaces/IAToken.sol';
-import {Errors} from '../helpers/Errors.sol';
-import {UserConfiguration} from '../configuration/UserConfiguration.sol';
-import {DataTypes} from '../types/DataTypes.sol';
-import {WadRayMath} from '../math/WadRayMath.sol';
-import {PercentageMath} from '../math/PercentageMath.sol';
-import {ValidationLogic} from './ValidationLogic.sol';
-import {ReserveLogic} from './ReserveLogic.sol';
-import {ReserveConfiguration} from '../configuration/ReserveConfiguration.sol';
+import { IERC20 } from "../../../dependencies/openzeppelin/contracts/IERC20.sol";
+import { GPv2SafeERC20 } from "../../../dependencies/gnosis/contracts/GPv2SafeERC20.sol";
+import { IMToken } from "../../../interfaces/IMToken.sol";
+import { Errors } from "../helpers/Errors.sol";
+import { UserConfiguration } from "../configuration/UserConfiguration.sol";
+import { DataTypes } from "../types/DataTypes.sol";
+import { WadRayMath } from "../math/WadRayMath.sol";
+import { PercentageMath } from "../math/PercentageMath.sol";
+import { ValidationLogic } from "./ValidationLogic.sol";
+import { ReserveLogic } from "./ReserveLogic.sol";
+import { ReserveConfiguration } from "../configuration/ReserveConfiguration.sol";
 
 /**
  * @title SupplyLogic library
@@ -28,9 +28,20 @@ library SupplyLogic {
   using PercentageMath for uint256;
 
   // See `IPool` for descriptions
-  event ReserveUsedAsCollateralEnabled(address indexed reserve, address indexed user);
-  event ReserveUsedAsCollateralDisabled(address indexed reserve, address indexed user);
-  event Withdraw(address indexed reserve, address indexed user, address indexed to, uint256 amount);
+  event ReserveUsedAsCollateralEnabled(
+    address indexed reserve,
+    address indexed user
+  );
+  event ReserveUsedAsCollateralDisabled(
+    address indexed reserve,
+    address indexed user
+  );
+  event Withdraw(
+    address indexed reserve,
+    address indexed user,
+    address indexed to,
+    uint256 amount
+  );
   event Supply(
     address indexed reserve,
     address user,
@@ -67,10 +78,14 @@ library SupplyLogic {
     reserve.updateInterestRates(reserveCache, params.asset, params.amount, 0);
 
     // Transfers the asset to the aTokenAddress
-    IERC20(params.asset).safeTransferFrom(msg.sender, reserveCache.aTokenAddress, params.amount);
+    IERC20(params.asset).safeTransferFrom(
+      msg.sender,
+      reserveCache.aTokenAddress,
+      params.amount
+    );
 
     // True if previous user balance was 0
-    bool isFirstSupply = IAToken(reserveCache.aTokenAddress).mint(
+    bool isFirstSupply = IMToken(reserveCache.aTokenAddress).mint(
       msg.sender,
       params.onBehalfOf,
       params.amount,
@@ -97,7 +112,13 @@ library SupplyLogic {
       }
     }
 
-    emit Supply(params.asset, msg.sender, params.onBehalfOf, params.amount, params.referralCode);
+    emit Supply(
+      params.asset,
+      msg.sender,
+      params.onBehalfOf,
+      params.amount,
+      params.referralCode
+    );
   }
 
   /**
@@ -126,9 +147,9 @@ library SupplyLogic {
     reserve.updateState(reserveCache);
 
     // User aToken balance
-    uint256 userBalance = IAToken(reserveCache.aTokenAddress).scaledBalanceOf(msg.sender).rayMul(
-      reserveCache.nextLiquidityIndex
-    );
+    uint256 userBalance = IMToken(reserveCache.aTokenAddress)
+      .scaledBalanceOf(msg.sender)
+      .rayMul(reserveCache.nextLiquidityIndex);
 
     uint256 amountToWithdraw = params.amount;
 
@@ -136,13 +157,22 @@ library SupplyLogic {
       amountToWithdraw = userBalance;
     }
 
-    ValidationLogic.validateWithdraw(reserveCache, amountToWithdraw, userBalance);
+    ValidationLogic.validateWithdraw(
+      reserveCache,
+      amountToWithdraw,
+      userBalance
+    );
 
     // Updates the liquidity, borrow and supply interest rates
-    reserve.updateInterestRates(reserveCache, params.asset, 0, amountToWithdraw);
+    reserve.updateInterestRates(
+      reserveCache,
+      params.asset,
+      0,
+      amountToWithdraw
+    );
 
     // Burn aTokens of asset
-    IAToken(reserveCache.aTokenAddress).burn(
+    IMToken(reserveCache.aTokenAddress).burn(
       msg.sender,
       params.to,
       amountToWithdraw,
@@ -203,7 +233,9 @@ library SupplyLogic {
     uint256 reserveId = reserve.id;
 
     if (params.from != params.to && params.amount != 0) {
-      DataTypes.UserConfigurationMap storage fromConfig = usersConfig[params.from];
+      DataTypes.UserConfigurationMap storage fromConfig = usersConfig[
+        params.from
+      ];
 
       // Disables asset to be used as collateral if user transfers all balance
       if (fromConfig.isUsingAsCollateral(reserveId)) {
@@ -228,7 +260,9 @@ library SupplyLogic {
 
       // Enables asset to be used as collateral if user previous balance is 0
       if (params.balanceToBefore == 0) {
-        DataTypes.UserConfigurationMap storage toConfig = usersConfig[params.to];
+        DataTypes.UserConfigurationMap storage toConfig = usersConfig[
+          params.to
+        ];
         if (
           ValidationLogic.validateUseAsCollateral(
             reservesData,
@@ -274,10 +308,15 @@ library SupplyLogic {
     DataTypes.ReserveData storage reserve = reservesData[asset];
     DataTypes.ReserveCache memory reserveCache = reserve.cache();
 
-    uint256 userBalance = IERC20(reserveCache.aTokenAddress).balanceOf(msg.sender);
+    uint256 userBalance = IERC20(reserveCache.aTokenAddress).balanceOf(
+      msg.sender
+    );
 
     // Ensure that reserve is active and not paused
-    ValidationLogic.validateSetUseReserveAsCollateral(reserveCache, userBalance);
+    ValidationLogic.validateSetUseReserveAsCollateral(
+      reserveCache,
+      userBalance
+    );
 
     if (useAsCollateral == userConfig.isUsingAsCollateral(reserve.id)) return;
 
