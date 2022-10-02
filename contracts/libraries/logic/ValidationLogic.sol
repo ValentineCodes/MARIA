@@ -16,6 +16,7 @@ import { Errors } from "../utils/Errors.sol";
 import { WadRayMath } from "../math/WadRayMath.sol";
 import { PercentageMath } from "../math/PercentageMath.sol";
 import { DataTypes } from "../types/DataTypes.sol";
+import { LayoutTypes } from "../types/LayoutTypes.sol";
 import { ReserveLogic } from "./ReserveLogic.sol";
 import { GenericLogic } from "./GenericLogic.sol";
 import { SafeCast } from "../../dependencies/openzeppelin/contracts/SafeCast.sol";
@@ -70,7 +71,7 @@ library ValidationLogic {
     uint256 supplyCap = reserveCache.reserveConfiguration.getSupplyCap();
     require(
       supplyCap == 0 ||
-        (IMToken(reserveCache.aTokenAddress).scaledTotalSupply().rayMul(
+        (IMToken(reserveCache.mTokenAddress).scaledTotalSupply().rayMul(
           reserveCache.nextLiquidityIndex
         ) + amount) <=
         supplyCap * (10**reserveCache.reserveConfiguration.getDecimals()),
@@ -294,14 +295,14 @@ library ValidationLogic {
         !params.userConfig.isUsingAsCollateral(reservesData[params.asset].id) ||
           params.reserveCache.reserveConfiguration.getLtv() == 0 ||
           params.amount >
-          IERC20(params.reserveCache.aTokenAddress).balanceOf(
+          IERC20(params.reserveCache.mTokenAddress).balanceOf(
             params.userAddress
           ),
         Errors.COLLATERAL_SAME_AS_BORROWING_CURRENCY
       );
 
       vars.availableLiquidity = IERC20(params.asset).balanceOf(
-        params.reserveCache.aTokenAddress
+        params.reserveCache.mTokenAddress
       );
 
       //calculate the max available loan size in stable rate mode as a percentage of the
@@ -434,7 +435,7 @@ library ValidationLogic {
         !userConfig.isUsingAsCollateral(reserve.id) ||
           reserveCache.reserveConfiguration.getLtv() == 0 ||
           stableDebt + variableDebt >
-          IERC20(reserveCache.aTokenAddress).balanceOf(msg.sender),
+          IERC20(reserveCache.mTokenAddress).balanceOf(msg.sender),
         Errors.COLLATERAL_SAME_AS_BORROWING_CURRENCY
       );
     } else {
@@ -477,7 +478,7 @@ library ValidationLogic {
           averageStableBorrowRate: 0,
           reserveFactor: reserveCache.reserveFactor,
           reserve: reserveAddress,
-          aToken: reserveCache.aTokenAddress
+          aToken: reserveCache.mTokenAddress
         })
       );
 
@@ -615,9 +616,7 @@ library ValidationLogic {
 
   /**
    * @notice Validates the health factor of a user.
-   * @param reservesData The state of all the reserves
-   * @param reservesList The addresses of all the active reserves
-   * @param eModeCategories The configuration of all the efficiency mode categories
+   * @param s Pool storage
    * @param userConfig The state of the user for the specific reserve
    * @param user The user to validate health factor of
    * @param userEModeCategory The users active efficiency mode category
@@ -625,9 +624,7 @@ library ValidationLogic {
    * @param oracle The price oracle
    */
   function validateHealthFactor(
-    mapping(address => DataTypes.ReserveData) storage reservesData,
-    mapping(uint256 => address) storage reservesList,
-    mapping(uint8 => DataTypes.EModeCategory) storage eModeCategories,
+    LayoutTypes.PoolLayout storage s,
     DataTypes.UserConfigurationMap memory userConfig,
     address user,
     uint8 userEModeCategory,
@@ -636,9 +633,7 @@ library ValidationLogic {
   ) internal view returns (uint256, bool) {
     (, , , , uint256 healthFactor, bool hasZeroLtvCollateral) = GenericLogic
       .calculateUserAccountData(
-        reservesData,
-        reservesList,
-        eModeCategories,
+        s,
         DataTypes.CalculateUserAccountDataParams({
           userConfig: userConfig,
           reservesCount: reservesCount,
@@ -658,9 +653,7 @@ library ValidationLogic {
 
   /**
    * @notice Validates the health factor of a user and the ltv of the asset being withdrawn.
-   * @param reservesData The state of all the reserves
-   * @param reservesList The addresses of all the active reserves
-   * @param eModeCategories The configuration of all the efficiency mode categories
+   * @param s Pool storage
    * @param userConfig The state of the user for the specific reserve
    * @param asset The asset for which the ltv will be validated
    * @param from The user from which the aTokens are being transferred
@@ -669,9 +662,7 @@ library ValidationLogic {
    * @param userEModeCategory The users active efficiency mode category
    */
   function validateHFAndLtv(
-    mapping(address => DataTypes.ReserveData) storage reservesData,
-    mapping(uint256 => address) storage reservesList,
-    mapping(uint8 => DataTypes.EModeCategory) storage eModeCategories,
+    LayoutTypes.PoolLayout storage s,
     DataTypes.UserConfigurationMap memory userConfig,
     address asset,
     address from,
@@ -682,6 +673,7 @@ library ValidationLogic {
     DataTypes.ReserveData memory reserve = reservesData[asset];
 
     (, bool hasZeroLtvCollateral) = validateHealthFactor(
+      s,
       reservesData,
       reservesList,
       eModeCategories,
@@ -734,7 +726,7 @@ library ValidationLogic {
       Errors.VARIABLE_DEBT_SUPPLY_NOT_ZERO
     );
     require(
-      IERC20(reserve.aTokenAddress).totalSupply() == 0,
+      IERC20(reserve.mTokenAddress).totalSupply() == 0,
       Errors.ATOKEN_SUPPLY_NOT_ZERO
     );
   }
@@ -791,18 +783,20 @@ library ValidationLogic {
    * set as collateral, mint unbacked, and liquidate
    * @dev This is used to ensure that the constraints for isolated assets are respected by all the actions that
    * generate transfers of aTokens
+   * @param s Pool storage
    * @param userConfig the user configuration
    * @param reserveConfig The reserve configuration
    * @return True if the asset can be activated as collateral, false otherwise
    **/
   function validateUseAsCollateral(
+    LayoutTypes.PoolLayout storage s,
     DataTypes.UserConfigurationMap memory userConfig,
     DataTypes.ReserveConfigurationMap memory reserveConfig
   ) internal view returns (bool) {
     if (!userConfig.isUsingAsCollateralAny()) {
       return true;
     }
-    (bool isolationModeActive, , ) = userConfig.getIsolationModeState();
+    (bool isolationModeActive, , ) = userConfig.getIsolationModeState(s);
 
     return (!isolationModeActive && reserveConfig.getDebtCeiling() == 0);
   }

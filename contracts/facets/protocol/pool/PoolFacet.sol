@@ -67,7 +67,9 @@ contract Pool is IPool, OwnableInternal {
         address asset,
         uint256 amount,
         address to
-    ) external override returns (uint256) {}
+    ) external override returns (uint256) {
+        LibPool.withdraw(asset, amount, to);
+    }
 
     /// @inheritdoc IPool
     function borrow(

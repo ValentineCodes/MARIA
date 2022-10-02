@@ -112,11 +112,11 @@ library LibPool {
 
     IERC20(asset).safeTransferFrom(
       msg.sender,
-      reserveCache.aTokenAddress,
+      reserveCache.mTokenAddress,
       amount
     );
 
-    bool isFirstSupply = IMToken(reserveCache.aTokenAddress).mint(
+    bool isFirstSupply = IMToken(reserveCache.mTokenAddress).mint(
       msg.sender,
       onBehalfOf,
       amount,
@@ -126,22 +126,81 @@ library LibPool {
     if (isFirstSupply) {
       if (
         ValidationLogic.validateUseAsCollateral(
+          s,
           userConfig,
           reserveCache.reserveConfiguration
         )
       ) {
         userConfig.setUsingAsCollateral(reserve.id, true);
-        emit ReserveUsedAsCollateralEnabled(params.asset, params.onBehalfOf);
+        emit ReserveUsedAsCollateralEnabled(asset, onBehalfOf);
       }
     }
 
-    emit Supply(
-      params.asset,
-      msg.sender,
-      params.onBehalfOf,
-      params.amount,
-      params.referralCode
+    emit Supply(asset, msg.sender, onBehalfOf, amount, referralCode);
+  }
+
+  function withdraw(
+    address asset,
+    uint256 amount,
+    address to
+  ) internal returns (uint256) {
+    LayoutTypes.PoolLayout storage s = layout();
+
+    DataTypes.UserConfigurationMap storage userConfig = s._usersConfig[
+      onBehalfOf
+    ];
+    DataTypes.ReserveData storage reserve = s._reserves[asset];
+    DataTypes.ReserveCache memory reserveCache = reserve.cache();
+
+    reserve.updateState(reserveCache);
+
+    uint256 userBalance = IMToken(reserveCache.mTokenAddress)
+      .scaledBalanceOf(msg.sender)
+      .rayMul(reserveCache.nextLiquidityIndex);
+
+    uint256 amountToWithdraw = amount;
+
+    if (amount == type(uint256).max) {
+      amountToWithdraw = userBalance;
+    }
+
+    ValidationLogic.validateWithdraw(
+      reserveCache,
+      amountToWithdraw,
+      userBalance
     );
+
+    reserve.updateInterestRates(reserveCache, asset, 0, amountToWithdraw);
+
+    IMToken(reserveCache.mTokenAddress).burn(
+      msg.sender,
+      to,
+      amountToWithdraw,
+      reserveCache.nextLiquidityIndex
+    );
+
+    if (userConfig.isUsingAsCollateral(reserve.id)) {
+      if (userConfig.isBorrowingAny()) {
+        ValidationLogic.validateHFAndLtv(
+          s,
+          userConfig,
+          asset,
+          msg.sender,
+          reservesCount,
+          oracle,
+          userEModeCategory
+        );
+      }
+
+      if (amountToWithdraw == userBalance) {
+        userConfig.setUsingAsCollateral(reserve.id, false);
+        emit ReserveUsedAsCollateralDisabled(asset, msg.sender);
+      }
+    }
+
+    emit Withdraw(asset, msg.sender, to, amountToWithdraw);
+
+    return amountToWithdraw;
   }
 
   function getReserveNormalizedIncome(

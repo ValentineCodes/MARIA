@@ -1,14 +1,14 @@
 // SPDX-License-Identifier: BUSL-1.1
 pragma solidity 0.8.10;
 
-import {IPool} from '../../../interfaces/IPool.sol';
-import {IInitializableAToken} from '../../../interfaces/IInitializableAToken.sol';
-import {IInitializableDebtToken} from '../../../interfaces/IInitializableDebtToken.sol';
-import {IAaveIncentivesController} from '../../../interfaces/IAaveIncentivesController.sol';
-import {InitializableImmutableAdminUpgradeabilityProxy} from '../aave-upgradeability/InitializableImmutableAdminUpgradeabilityProxy.sol';
-import {ReserveConfiguration} from '../configuration/ReserveConfiguration.sol';
-import {DataTypes} from '../types/DataTypes.sol';
-import {ConfiguratorInputTypes} from '../types/ConfiguratorInputTypes.sol';
+import { IPool } from "../../../interfaces/IPool.sol";
+import { IInitializableAToken } from "../../../interfaces/IInitializableAToken.sol";
+import { IInitializableDebtToken } from "../../../interfaces/IInitializableDebtToken.sol";
+import { IAaveIncentivesController } from "../../../interfaces/IAaveIncentivesController.sol";
+import { InitializableImmutableAdminUpgradeabilityProxy } from "../aave-upgradeability/InitializableImmutableAdminUpgradeabilityProxy.sol";
+import { ReserveConfiguration } from "../configuration/ReserveConfiguration.sol";
+import { DataTypes } from "../types/DataTypes.sol";
+import { ConfiguratorInputTypes } from "../types/ConfiguratorInputTypes.sol";
 
 /**
  * @title ConfiguratorLogic library
@@ -48,9 +48,10 @@ library ConfiguratorLogic {
    * @param pool The Pool in which the reserve will be initialized
    * @param input The needed parameters for the initialization
    */
-  function executeInitReserve(IPool pool, ConfiguratorInputTypes.InitReserveInput calldata input)
-    public
-  {
+  function executeInitReserve(
+    IPool pool,
+    ConfiguratorInputTypes.InitReserveInput calldata input
+  ) public {
     address aTokenProxyAddress = _initTokenWithProxy(
       input.aTokenImpl,
       abi.encodeWithSelector(
@@ -102,7 +103,8 @@ library ConfiguratorLogic {
       input.interestRateStrategyAddress
     );
 
-    DataTypes.ReserveConfigurationMap memory currentConfig = DataTypes.ReserveConfigurationMap(0);
+    DataTypes.ReserveConfigurationMap memory currentConfig = DataTypes
+      .ReserveConfigurationMap(0);
 
     currentConfig.setDecimals(input.underlyingAssetDecimals);
 
@@ -131,9 +133,13 @@ library ConfiguratorLogic {
     IPool cachedPool,
     ConfiguratorInputTypes.UpdateATokenInput calldata input
   ) public {
-    DataTypes.ReserveData memory reserveData = cachedPool.getReserveData(input.asset);
+    DataTypes.ReserveData memory reserveData = cachedPool.getReserveData(
+      input.asset
+    );
 
-    (, , , uint256 decimals, , ) = cachedPool.getConfiguration(input.asset).getParams();
+    (, , , uint256 decimals, , ) = cachedPool
+      .getConfiguration(input.asset)
+      .getParams();
 
     bytes memory encodedCall = abi.encodeWithSelector(
       IInitializableAToken.initialize.selector,
@@ -147,9 +153,17 @@ library ConfiguratorLogic {
       input.params
     );
 
-    _upgradeTokenImplementation(reserveData.aTokenAddress, input.implementation, encodedCall);
+    _upgradeTokenImplementation(
+      reserveData.mTokenAddress,
+      input.implementation,
+      encodedCall
+    );
 
-    emit ATokenUpgraded(input.asset, reserveData.aTokenAddress, input.implementation);
+    emit ATokenUpgraded(
+      input.asset,
+      reserveData.mTokenAddress,
+      input.implementation
+    );
   }
 
   /**
@@ -162,9 +176,13 @@ library ConfiguratorLogic {
     IPool cachedPool,
     ConfiguratorInputTypes.UpdateDebtTokenInput calldata input
   ) public {
-    DataTypes.ReserveData memory reserveData = cachedPool.getReserveData(input.asset);
+    DataTypes.ReserveData memory reserveData = cachedPool.getReserveData(
+      input.asset
+    );
 
-    (, , , uint256 decimals, , ) = cachedPool.getConfiguration(input.asset).getParams();
+    (, , , uint256 decimals, , ) = cachedPool
+      .getConfiguration(input.asset)
+      .getParams();
 
     bytes memory encodedCall = abi.encodeWithSelector(
       IInitializableDebtToken.initialize.selector,
@@ -200,9 +218,13 @@ library ConfiguratorLogic {
     IPool cachedPool,
     ConfiguratorInputTypes.UpdateDebtTokenInput calldata input
   ) public {
-    DataTypes.ReserveData memory reserveData = cachedPool.getReserveData(input.asset);
+    DataTypes.ReserveData memory reserveData = cachedPool.getReserveData(
+      input.asset
+    );
 
-    (, , , uint256 decimals, , ) = cachedPool.getConfiguration(input.asset).getParams();
+    (, , , uint256 decimals, , ) = cachedPool
+      .getConfiguration(input.asset)
+      .getParams();
 
     bytes memory encodedCall = abi.encodeWithSelector(
       IInitializableDebtToken.initialize.selector,
