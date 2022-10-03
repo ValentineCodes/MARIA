@@ -53,6 +53,24 @@ library LayoutTypes {
         bool initializing;
     }
 
+    struct AddressesProviderLayout {
+        // Identifier of the Aave Market
+        string _marketId;
+
+        // Map of registered addresses (identifier => registeredAddress)
+        mapping(bytes32 => address) _addresses;
+
+        /**
+         * @dev Indicates that the contract has been initialized.
+         */
+        uint256 lastInitializedRevision = 0;
+
+        /**
+         * @dev Indicates that the contract is in the process of being initialized.
+         */
+        bool initializing;
+    }
+
     struct InterestRateStrategyLayout {
         /**
          * @dev Indicates that the contract has been initialized.
