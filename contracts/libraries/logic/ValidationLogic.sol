@@ -6,7 +6,7 @@ import { Address } from "../../dependencies/openzeppelin/contracts/Address.sol";
 import { GPv2SafeERC20 } from "../../dependencies/gnosis/contracts/GPv2SafeERC20.sol";
 import { IInterestRateStrategy } from "../../interfaces/IInterestRateStrategy.sol";
 import { IStableDebtToken } from "../../interfaces/IStableDebtToken.sol";
-import { IScaledBalanceToken } from "../../interfaces/IScaledBalanceToken.sol";
+import { IVariableDebtToken } from "../../interfaces/IVariableDebtToken.sol";
 import { IPriceOracleGetter } from "../../interfaces/IPriceOracleGetter.sol";
 import { IMToken } from "../../interfaces/IMToken.sol";
 import { IPriceOracleSentinel } from "../../interfaces/IPriceOracleSentinel.sol";
@@ -361,7 +361,7 @@ library ValidationLogic {
     require(isActive, Errors.RESERVE_INACTIVE);
     require(!isPaused, Errors.RESERVE_PAUSED);
 
-    uint256 variableDebtPreviousIndex = IScaledBalanceToken(
+    uint256 variableDebtPreviousIndex = IVariableDebtToken(
       reserveCache.variableDebtTokenAddress
     ).getPreviousIndex(onBehalfOf);
 

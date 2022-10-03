@@ -8,12 +8,16 @@ import { Query } from "../utils/Query.sol";
 import { IERC20 } from "../../dependencies/openzeppelin/contracts/IERC20.sol";
 import { GPv2SafeERC20 } from "../../dependencies/gnosis/contracts/GPv2SafeERC20.sol";
 import { IMToken } from "../../interfaces/IMToken.sol";
+import { IStableDebtToken } from "../../interfaces/IStableDebtToken.sol";
+import { IVariableDebtToken } from "../../interfaces/IVariableDebtToken.sol";
 import { Errors } from "../utils/Errors.sol";
+import { Helpers } from "../utils/Helpers.sol";
 import { MathUtils } from "../math/MathUtils.sol";
 import { WadRayMath } from "../math/WadRayMath.sol";
 import { PercentageMath } from "../math/PercentageMath.sol";
 import { ValidationLogic } from "../logic/ValidationLogic.sol";
 import { ReserveLogic } from "../logic/ReserveLogic.sol";
+import { IsolationModeLogic } from "../logic/IsolationModeLogic.sol";
 import { ReserveConfiguration } from "../configuration/ReserveConfiguration.sol";
 import { UserConfiguration } from "../configuration/UserConfiguration.sol";
 
@@ -75,7 +79,7 @@ library LibPool {
     address indexed user,
     address indexed repayer,
     uint256 amount,
-    bool useATokens
+    bool useMTokens
   );
 
   modifier initializer(LayoutTypes.PoolLayout storage s) {
@@ -328,7 +332,7 @@ library LibPool {
     );
 
     if (releaseUnderlying) {
-      IMToken(reserveCache.aTokenAddress).transferUnderlyingTo(user, amount);
+      IMToken(reserveCache.mTokenAddress).transferUnderlyingTo(user, amount);
     }
 
     emit Borrow(
@@ -342,6 +346,107 @@ library LibPool {
         : reserve.currentVariableBorrowRate,
       referralCode
     );
+  }
+
+  function repay(
+    address asset,
+    uint256 amount,
+    uint256 interestRateMode,
+    address onBehalfOf,
+    bool useMTokens
+  ) internal returns (uint256) {
+    LayoutTypes.PoolLayout storage s = layout();
+
+    DataTypes.UserConfigurationMap storage userConfig = s._usersConfig[
+      onBehalfOf
+    ];
+    DataTypes.ReserveData storage reserve = s._reserves[asset];
+    DataTypes.ReserveCache memory reserveCache = reserve.cache();
+
+    reserve.updateState(reserveCache);
+
+    (uint256 stableDebt, uint256 variableDebt) = Helpers.getUserCurrentDebt(
+      onBehalfOf,
+      reserveCache
+    );
+
+    ValidationLogic.validateRepay(
+      reserveCache,
+      amount,
+      interestRateMode,
+      onBehalfOf,
+      stableDebt,
+      variableDebt
+    );
+
+    uint256 paybackAmount = interestRateMode ==
+      DataTypes.InterestRateMode.STABLE
+      ? stableDebt
+      : variableDebt;
+
+    // Allows a user to repay with aTokens without leaving dust from interest.
+    if (useMTokens && amount == type(uint256).max) {
+      amount = IMToken(reserveCache.mTokenAddress).balanceOf(msg.sender);
+    }
+
+    if (amount < paybackAmount) {
+      paybackAmount = amount;
+    }
+
+    if (interestRateMode == DataTypes.InterestRateMode.STABLE) {
+      (
+        reserveCache.nextTotalStableDebt,
+        reserveCache.nextAvgStableBorrowRate
+      ) = IStableDebtToken(reserveCache.stableDebtTokenAddress).burn(
+        onBehalfOf,
+        paybackAmount
+      );
+    } else {
+      reserveCache.nextScaledVariableDebt = IVariableDebtToken(
+        reserveCache.variableDebtTokenAddress
+      ).burn(onBehalfOf, paybackAmount, reserveCache.nextVariableBorrowIndex);
+    }
+
+    reserve.updateInterestRates(
+      reserveCache,
+      asset,
+      useMTokens ? 0 : paybackAmount,
+      0
+    );
+
+    if (stableDebt + variableDebt - paybackAmount == 0) {
+      userConfig.setBorrowing(reserve.id, false);
+    }
+
+    IsolationModeLogic.updateIsolatedDebtIfIsolated(
+      s,
+      userConfig,
+      reserveCache,
+      paybackAmount
+    );
+
+    if (useMTokens) {
+      IMToken(reserveCache.mTokenAddress).burn(
+        msg.sender,
+        reserveCache.mTokenAddress,
+        paybackAmount,
+        reserveCache.nextLiquidityIndex
+      );
+    } else {
+      IERC20(asset).safeTransferFrom(
+        msg.sender,
+        reserveCache.mTokenAddress,
+        paybackAmount
+      );
+      IMToken(reserveCache.mTokenAddress).handleRepayment(
+        msg.sender,
+        paybackAmount
+      );
+    }
+
+    emit Repay(asset, onBehalfOf, msg.sender, paybackAmount, useMTokens);
+
+    return paybackAmount;
   }
 
   function getReserveNormalizedIncome(

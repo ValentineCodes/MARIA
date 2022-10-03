@@ -3,6 +3,7 @@
 pragma solidity ^0.8.10;
 
 import {LibPool} from "../../../libraries/facets/LibPool.sol";
+import {DataTypes} from "../../../libraries/types/DataTypes.sol";
 import {LayoutTypes} from "../../../libraries/types/LayoutTypes.sol";
 import {OwnableInternal} from "../../../dependencies/solidstate/contracts/access/ownable/OwnableInternal.sol";
 import {IERC20WithPermit} from '../../../interfaces/IERC20WithPermit.sol';
@@ -68,7 +69,7 @@ contract Pool is IPool, OwnableInternal {
         uint256 amount,
         address to
     ) external override returns (uint256) {
-        LibPool.withdraw(asset, amount, to);
+       return LibPool.withdraw(asset, amount, to);
     }
 
     /// @inheritdoc IPool
@@ -82,7 +83,7 @@ contract Pool is IPool, OwnableInternal {
         LibPool.borrow(
             asset,
             amount,
-            interestRateMode,
+            DataTypes.InterestRateMode(interestRateMode),
             referralCode,
             onBehalfOf, 
             true
@@ -95,7 +96,9 @@ contract Pool is IPool, OwnableInternal {
         uint256 amount,
         uint256 interestRateMode,
         address onBehalfOf
-    ) external override returns (uint256) {}
+    ) external override returns (uint256) {
+       return LibPool.repay(asset, amount, DataTypes.InterestRateMode(interestRateMode), onBehalfOf, false);
+    }
 
     /// @inheritdoc IPool
     function repayWithPermit(
@@ -107,14 +110,28 @@ contract Pool is IPool, OwnableInternal {
         uint8 permitV,
         bytes32 permitR,
         bytes32 permitS
-    ) external override returns (uint256) {}
+    ) external override returns (uint256) {
+        IERC20WithPermit(asset).permit(
+            msg.sender,
+            address(this),
+            amount,
+            deadline,
+            permitV,
+            permitR,
+            permitS
+        );
+        
+        return LibPool.repay(asset, amount, DataTypes.InterestRateMode(interestRateMode), onBehalfOf, false);
+    }
 
     /// @inheritdoc IPool
-    function repayWithATokens(
+    function repayWithMTokens(
         address asset,
         uint256 amount,
         uint256 interestRateMode
-    ) external override returns (uint256) {}
+    ) external override returns (uint256) {
+        return LibPool.repay(asset, amount, DataTypes.InterestRateMode(interestRateMode), onBehalfOf, true);
+    }
 
     /// @inheritdoc IPool
     function swapBorrowRateMode(address asset, uint256 interestRateMode)
@@ -140,7 +157,7 @@ contract Pool is IPool, OwnableInternal {
         address debtAsset,
         address user,
         uint256 debtToCover,
-        bool receiveAToken
+        bool receiveMToken
     ) external override {}
 
     /// @inheritdoc IPool

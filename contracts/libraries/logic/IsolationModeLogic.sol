@@ -1,10 +1,11 @@
 // SPDX-License-Identifier: BUSL-1.1
 pragma solidity 0.8.10;
 
-import {DataTypes} from '../types/DataTypes.sol';
-import {ReserveConfiguration} from '../configuration/ReserveConfiguration.sol';
-import {UserConfiguration} from '../configuration/UserConfiguration.sol';
-import {SafeCast} from '../../../dependencies/openzeppelin/contracts/SafeCast.sol';
+import { DataTypes } from "../types/DataTypes.sol";
+import { LayoutTypes } from "../types/LayoutTypes.sol";
+import { ReserveConfiguration } from "../configuration/ReserveConfiguration.sol";
+import { UserConfiguration } from "../configuration/UserConfiguration.sol";
+import { SafeCast } from "../../dependencies/openzeppelin/contracts/SafeCast.sol";
 
 /**
  * @title IsolationModeLogic library
@@ -21,24 +22,26 @@ library IsolationModeLogic {
 
   /**
    * @notice updated the isolated debt whenever a position collateralized by an isolated asset is repaid or liquidated
-   * @param reservesData The state of all the reserves
-   * @param reservesList The addresses of all the active reserves
+   * @param s Pool storage
    * @param userConfig The user configuration mapping
    * @param reserveCache The cached data of the reserve
    * @param repayAmount The amount being repaid
    */
   function updateIsolatedDebtIfIsolated(
-    mapping(address => DataTypes.ReserveData) storage reservesData,
-    mapping(uint256 => address) storage reservesList,
+    LayoutTypes.PoolLayout storage s,
     DataTypes.UserConfigurationMap storage userConfig,
     DataTypes.ReserveCache memory reserveCache,
     uint256 repayAmount
   ) internal {
-    (bool isolationModeActive, address isolationModeCollateralAddress, ) = userConfig
-      .getIsolationModeState(reservesData, reservesList);
+    (
+      bool isolationModeActive,
+      address isolationModeCollateralAddress,
+
+    ) = userConfig.getIsolationModeState(s);
 
     if (isolationModeActive) {
-      uint128 isolationModeTotalDebt = reservesData[isolationModeCollateralAddress]
+      uint128 isolationModeTotalDebt = s
+        ._reserves[isolationModeCollateralAddress]
         .isolationModeTotalDebt;
 
       uint128 isolatedDebtRepaid = (repayAmount /
@@ -49,10 +52,11 @@ library IsolationModeLogic {
       // since the debt ceiling does not take into account the interest accrued, it might happen that amount
       // repaid > debt in isolation mode
       if (isolationModeTotalDebt <= isolatedDebtRepaid) {
-        reservesData[isolationModeCollateralAddress].isolationModeTotalDebt = 0;
+        s._reserves[isolationModeCollateralAddress].isolationModeTotalDebt = 0;
         emit IsolationModeTotalDebtUpdated(isolationModeCollateralAddress, 0);
       } else {
-        uint256 nextIsolationModeTotalDebt = reservesData[isolationModeCollateralAddress]
+        uint256 nextIsolationModeTotalDebt = s
+          ._reserves[isolationModeCollateralAddress]
           .isolationModeTotalDebt = isolationModeTotalDebt - isolatedDebtRepaid;
         emit IsolationModeTotalDebtUpdated(
           isolationModeCollateralAddress,
