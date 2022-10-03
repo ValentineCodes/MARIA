@@ -5,6 +5,7 @@ pragma solidity ^0.8.10;
 import { OwnableInternal } from "../../dependencies/solidstate/contracts/access/ownable/OwnableInternal.sol";
 import { LibAddressProvider } from "../../libraries/facets/LibAddressProvider.sol";
 import { LayoutTypes } from "../../libraries/types/LayoutTypes.sol";
+import {IAddressProvider} from "../../interfaces/IAddressProvider.sol";
 
 /**
  * @title AddressesProvider
@@ -12,29 +13,29 @@ import { LayoutTypes } from "../../libraries/types/LayoutTypes.sol";
  * @notice Main registry of addresses part of or connected to the protocol, including permissioned roles
  * @dev Owned by the Maria Governance
  **/
-contract AddressProvider is OwnableInternal {
+contract AddressProvider is IAddressProvider, OwnableInternal {
   using LibAddressProvider for LayoutTypes.AddressProviderLayout;
 
   function initialize(string memory marketId) external onlyOwner {
     LibAddressProvider.layout().initialize(marketId);
   }
 
-  /// @inheritdoc IAddressesProvider
+  /// @inheritdoc IAddressProvider
   function getMarketId() external view override returns (string memory) {
     return LibAddressProvider.layout()._marketId;
   }
 
-  /// @inheritdoc IAddressesProvider
+  /// @inheritdoc IAddressProvider
   function setMarketId(string memory newMarketId) external override onlyOwner {
     LibAddressProvider.layout()._setMarketId(newMarketId);
   }
 
-  /// @inheritdoc IAddressesProvider
+  /// @inheritdoc IAddressProvider
   function getAddress(bytes32 id) external view override returns (address) {
     return LibAddressProvider.getAddress(id);
   }
 
-  /// @inheritdoc IAddressesProvider
+  /// @inheritdoc IAddressProvider
   function setAddress(bytes32 id, address newAddress)
     external
     override
@@ -43,22 +44,22 @@ contract AddressProvider is OwnableInternal {
     LibAddressProvider.setAddress(id, newAddress);
   }
 
-  /// @inheritdoc IAddressesProvider
+  /// @inheritdoc IAddressProvider
   function getPool() external view override returns (address) {
     return LibAddressProvider.getPool();
   }
 
-  /// @inheritdoc IAddressesProvider
+  /// @inheritdoc IAddressProvider
   function setPool(address newPool) external override onlyOwner {
     LibAddressProvider.setPool(newPool);
   }
 
-  /// @inheritdoc IAddressesProvider
+  /// @inheritdoc IAddressProvider
   function getPoolConfigurator() external view override returns (address) {
     return LibAddressProvider.getPoolConfigurator();
   }
 
-  /// @inheritdoc IAddressesProvider
+  /// @inheritdoc IAddressProvider
   function setPoolConfigurator(address newPoolConfigurator)
     external
     override
@@ -67,42 +68,42 @@ contract AddressProvider is OwnableInternal {
     LibAddressProvider.setPoolConfigurator(address newPoolConfigurator);
   }
 
-  /// @inheritdoc IAddressesProvider
+  /// @inheritdoc IAddressProvider
   function getPriceOracle() external view override returns (address) {
     return LibAddressProvider.getPriceOracle();
   }
 
-  /// @inheritdoc IAddressesProvider
+  /// @inheritdoc IAddressProvider
   function setPriceOracle(address newPriceOracle) external override onlyOwner {
     LibAddressProvider.setPriceOracle(address newPriceOracle);
   }
 
-  /// @inheritdoc IAddressesProvider
+  /// @inheritdoc IAddressProvider
   function getACLManager() external view override returns (address) {
     return LibAddressProvider.getACLManager();
   }
 
-  /// @inheritdoc IAddressesProvider
+  /// @inheritdoc IAddressProvider
   function setACLManager(address newAclManager) external override onlyOwner {
     LibAddressProvider.setACLManager(address newAclManager);
   }
 
-  /// @inheritdoc IAddressesProvider
+  /// @inheritdoc IAddressProvider
   function getACLAdmin() external view override returns (address) {
     return LibAddressProvider.getACLAdmin();
   }
 
-  /// @inheritdoc IAddressesProvider
+  /// @inheritdoc IAddressProvider
   function setACLAdmin(address newAclAdmin) external override onlyOwner {
     LibAddressProvider.setACLAdmin(address newAclAdmin);
   }
 
-  /// @inheritdoc IAddressesProvider
+  /// @inheritdoc IAddressProvider
   function getPriceOracleSentinel() external view override returns (address) {
     return LibAddressProvider.getPriceOracleSentinel();
   }
 
-  /// @inheritdoc IAddressesProvider
+  /// @inheritdoc IAddressProvider
   function setPriceOracleSentinel(address newPriceOracleSentinel)
     external
     override
@@ -111,7 +112,7 @@ contract AddressProvider is OwnableInternal {
     LibAddressProvider.setPriceOracleSentinel(address newPriceOracleSentinel);
   }
 
-  /// @inheritdoc IAddressesProvider
+  /// @inheritdoc IAddressProvider
   function getPoolDataProvider() external view override returns (address) {
     return LibAddressProvider.getPoolDataProvider();
   }

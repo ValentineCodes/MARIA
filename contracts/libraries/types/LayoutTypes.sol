@@ -2,6 +2,7 @@
 pragma solidity 0.8.10;
 
 import {DataTypes} from "./DataTypes.sol";
+import { AggregatorInterface } from "../../dependencies/chainlink/AggregatorInterface.sol";
 
 library LayoutTypes {
     struct PoolLayout {
@@ -31,7 +32,7 @@ library LayoutTypes {
         /**
          * @dev Indicates that the contract has been initialized.
          */
-        uint256 lastInitializedRevision = 0;
+        uint256 lastInitializedRevision;
 
         /**
          * @dev Indicates that the contract is in the process of being initialized.
@@ -45,7 +46,7 @@ library LayoutTypes {
         /**
          * @dev Indicates that the contract has been initialized.
          */
-        uint256 lastInitializedRevision = 0;
+        uint256 lastInitializedRevision;
 
         /**
          * @dev Indicates that the contract is in the process of being initialized.
@@ -53,7 +54,7 @@ library LayoutTypes {
         bool initializing;
     }
 
-    struct AddressesProviderLayout {
+    struct AddressProviderLayout {
         // Identifier of the Aave Market
         string _marketId;
 
@@ -63,7 +64,7 @@ library LayoutTypes {
         /**
          * @dev Indicates that the contract has been initialized.
          */
-        uint256 lastInitializedRevision = 0;
+        uint256 lastInitializedRevision;
 
         /**
          * @dev Indicates that the contract is in the process of being initialized.
@@ -75,7 +76,22 @@ library LayoutTypes {
         /**
          * @dev Indicates that the contract has been initialized.
          */
-        uint256 lastInitializedRevision = 0;
+        uint256 lastInitializedRevision;
+
+        /**
+         * @dev Indicates that the contract is in the process of being initialized.
+         */
+        bool initializing;
+    }
+
+    struct MariaPriceOracleLayout {
+        // Map of asset price sources (asset => priceSource)
+        mapping(address => AggregatorInterface) _assetsSources;
+
+        /**
+         * @dev Indicates that the contract has been initialized.
+         */
+        uint256 lastInitializedRevision;
 
         /**
          * @dev Indicates that the contract is in the process of being initialized.
@@ -105,7 +121,7 @@ library LayoutTypes {
         /**
          * @dev Indicates that the contract has been initialized.
          */
-        uint256 lastInitializedRevision = 0;
+        uint256 lastInitializedRevision;
 
         /**
          * @dev Indicates that the contract is in the process of being initialized.
@@ -148,7 +164,7 @@ library LayoutTypes {
           /**
          * @dev Indicates that the contract has been initialized.
          */
-        uint256 lastInitializedRevision = 0;
+        uint256 lastInitializedRevision;
 
         /**
          * @dev Indicates that the contract is in the process of being initialized.
@@ -201,7 +217,7 @@ library LayoutTypes {
         /**
          * @dev Indicates that the contract has been initialized.
          */
-        uint256 lastInitializedRevision = 0;
+        uint256 lastInitializedRevision;
 
         /**
          * @dev Indicates that the contract is in the process of being initialized.
