@@ -125,15 +125,11 @@ library ValidationLogic {
 
   /**
    * @notice Validates a borrow action.
-   * @param reservesData The state of all the reserves
-   * @param reservesList The addresses of all the active reserves
-   * @param eModeCategories The configuration of all the efficiency mode categories
+   * @param s Pool storage
    * @param params Additional params needed for the validation
    */
   function validateBorrow(
-    mapping(address => DataTypes.ReserveData) storage reservesData,
-    mapping(uint256 => address) storage reservesList,
-    mapping(uint8 => DataTypes.EModeCategory) storage eModeCategories,
+    LayoutTypes.PoolLayout storage s,
     DataTypes.ValidateBorrowParams memory params
   ) internal view {
     require(params.amount != 0, Errors.INVALID_AMOUNT);
@@ -203,7 +199,8 @@ library ValidationLogic {
       );
 
       require(
-        reservesData[params.isolationModeCollateralAddress]
+        s
+          ._reserves[params.isolationModeCollateralAddress]
           .isolationModeTotalDebt +
           (params.amount /
             10 **
@@ -220,7 +217,8 @@ library ValidationLogic {
           params.userEModeCategory,
         Errors.INCONSISTENT_EMODE_CATEGORY
       );
-      vars.eModePriceSource = eModeCategories[params.userEModeCategory]
+      vars.eModePriceSource = s
+        ._eModeCategories[params.userEModeCategory]
         .priceSource;
     }
 
@@ -232,9 +230,7 @@ library ValidationLogic {
       vars.healthFactor,
 
     ) = GenericLogic.calculateUserAccountData(
-      reservesData,
-      reservesList,
-      eModeCategories,
+      s,
       DataTypes.CalculateUserAccountDataParams({
         userConfig: params.userConfig,
         reservesCount: params.reservesCount,
@@ -292,7 +288,7 @@ library ValidationLogic {
       );
 
       require(
-        !params.userConfig.isUsingAsCollateral(reservesData[params.asset].id) ||
+        !params.userConfig.isUsingAsCollateral(s._reserves[params.asset].id) ||
           params.reserveCache.reserveConfiguration.getLtv() == 0 ||
           params.amount >
           IERC20(params.reserveCache.mTokenAddress).balanceOf(
@@ -320,7 +316,7 @@ library ValidationLogic {
     if (params.userConfig.isBorrowingAny()) {
       (vars.siloedBorrowingEnabled, vars.siloedBorrowingAddress) = params
         .userConfig
-        .getSiloedBorrowingState(reservesData, reservesList);
+        .getSiloedBorrowingState();
 
       if (vars.siloedBorrowingEnabled) {
         require(
@@ -670,13 +666,10 @@ library ValidationLogic {
     address oracle,
     uint8 userEModeCategory
   ) internal view {
-    DataTypes.ReserveData memory reserve = reservesData[asset];
+    DataTypes.ReserveData memory reserve = s._reserves[asset];
 
     (, bool hasZeroLtvCollateral) = validateHealthFactor(
       s,
-      reservesData,
-      reservesList,
-      eModeCategories,
       userConfig,
       from,
       userEModeCategory,

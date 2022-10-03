@@ -36,6 +36,17 @@ library LibPool {
     address indexed reserve,
     address indexed user
   );
+
+  event RebalanceStableBorrowRate(
+    address indexed reserve,
+    address indexed user
+  );
+  event SwapBorrowRateMode(
+    address indexed reserve,
+    address indexed user,
+    DataTypes.InterestRateMode interestRateMode
+  );
+  event IsolationModeTotalDebtUpdated(address indexed asset, uint256 totalDebt);
   event Withdraw(
     address indexed reserve,
     address indexed user,
@@ -48,6 +59,23 @@ library LibPool {
     address indexed onBehalfOf,
     uint256 amount,
     uint16 indexed referralCode
+  );
+
+  event Borrow(
+    address indexed reserve,
+    address user,
+    address indexed onBehalfOf,
+    uint256 amount,
+    DataTypes.InterestRateMode interestRateMode,
+    uint256 borrowRate,
+    uint16 indexed referralCode
+  );
+  event Repay(
+    address indexed reserve,
+    address indexed user,
+    address indexed repayer,
+    uint256 amount,
+    bool useATokens
   );
 
   modifier initializer(LayoutTypes.PoolLayout storage s) {
@@ -186,9 +214,9 @@ library LibPool {
           userConfig,
           asset,
           msg.sender,
-          reservesCount,
+          s._reservesCount,
           oracle,
-          userEModeCategory
+          s._usersEModeCategory[msg.sender]
         );
       }
 
@@ -201,6 +229,119 @@ library LibPool {
     emit Withdraw(asset, msg.sender, to, amountToWithdraw);
 
     return amountToWithdraw;
+  }
+
+  function borrow(
+    address asset,
+    uint256 amount,
+    uint256 interestRateMode,
+    uint16 referralCode,
+    address onBehalfOf,
+    bool releaseUnderlying
+  ) internal {
+    LayoutTypes.PoolLayout storage s = layout();
+
+    DataTypes.UserConfigurationMap storage userConfig = s._usersConfig[
+      onBehalfOf
+    ];
+    DataTypes.ReserveData storage reserve = s._reserves[asset];
+    DataTypes.ReserveCache memory reserveCache = reserve.cache();
+
+    reserve.updateState(reserveCache);
+
+    (
+      bool isolationModeActive,
+      address isolationModeCollateralAddress,
+      uint256 isolationModeDebtCeiling
+    ) = userConfig.getIsolationModeState();
+
+    ValidationLogic.validateBorrow(
+      s,
+      DataTypes.ValidateBorrowParams({
+        reserveCache: reserveCache,
+        userConfig: userConfig,
+        asset: asset,
+        userAddress: onBehalfOf,
+        amount: amount,
+        interestRateMode: interestRateMode,
+        maxStableLoanPercent: s._maxStableRateBorrowSizePercent,
+        reservesCount: s._reservesCount,
+        oracle: oracle,
+        userEModeCategory: s._usersEModeCategory[onBehalfOf],
+        priceOracleSentinel: priceOracleSentinel,
+        isolationModeActive: isolationModeActive,
+        isolationModeCollateralAddress: isolationModeCollateralAddress,
+        isolationModeDebtCeiling: isolationModeDebtCeiling
+      })
+    );
+
+    uint256 currentStableRate = 0;
+    bool isFirstBorrowing = false;
+
+    if (interestRateMode == DataTypes.InterestRateMode.STABLE) {
+      currentStableRate = reserve.currentStableBorrowRate;
+
+      (
+        isFirstBorrowing,
+        reserveCache.nextTotalStableDebt,
+        reserveCache.nextAvgStableBorrowRate
+      ) = IStableDebtToken(reserveCache.stableDebtTokenAddress).mint(
+        user,
+        onBehalfOf,
+        amount,
+        currentStableRate
+      );
+    } else {
+      (
+        isFirstBorrowing,
+        reserveCache.nextScaledVariableDebt
+      ) = IVariableDebtToken(reserveCache.variableDebtTokenAddress).mint(
+        user,
+        onBehalfOf,
+        amount,
+        reserveCache.nextVariableBorrowIndex
+      );
+    }
+
+    if (isFirstBorrowing) {
+      userConfig.setBorrowing(reserve.id, true);
+    }
+
+    if (isolationModeActive) {
+      uint256 nextIsolationModeTotalDebt = s
+        ._reserves[isolationModeCollateralAddress]
+        .isolationModeTotalDebt += (amount /
+        10 **
+          (reserveCache.reserveConfiguration.getDecimals() -
+            ReserveConfiguration.DEBT_CEILING_DECIMALS)).toUint128();
+      emit IsolationModeTotalDebtUpdated(
+        isolationModeCollateralAddress,
+        nextIsolationModeTotalDebt
+      );
+    }
+
+    reserve.updateInterestRates(
+      reserveCache,
+      asset,
+      0,
+      releaseUnderlying ? amount : 0
+    );
+
+    if (releaseUnderlying) {
+      IMToken(reserveCache.aTokenAddress).transferUnderlyingTo(user, amount);
+    }
+
+    emit Borrow(
+      asset,
+      user,
+      onBehalfOf,
+      amount,
+      interestRateMode,
+      interestRateMode == DataTypes.InterestRateMode.STABLE
+        ? currentStableRate
+        : reserve.currentVariableBorrowRate,
+      referralCode
+    );
   }
 
   function getReserveNormalizedIncome(

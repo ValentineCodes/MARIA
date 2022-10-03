@@ -78,7 +78,16 @@ contract Pool is IPool, OwnableInternal {
         uint256 interestRateMode,
         uint16 referralCode,
         address onBehalfOf
-    ) external override {}
+    ) external override {
+        LibPool.borrow(
+            asset,
+            amount,
+            interestRateMode,
+            referralCode,
+            onBehalfOf, 
+            true
+        )
+    }
 
     /// @inheritdoc IPool
     function repay(
