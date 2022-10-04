@@ -79,6 +79,20 @@ contract AddressProvider is IAddressProvider, OwnableInternal {
   }
 
   /// @inheritdoc IAddressProvider
+  function getPriceOracleSentinel() external view override returns (address) {
+    return LibAddressProvider.getPriceOracleSentinel();
+  }
+
+  /// @inheritdoc IAddressProvider
+  function setPriceOracleSentinel(address newPriceOracleSentinel)
+    external
+    override
+    onlyOwner
+  {
+    LibAddressProvider.setPriceOracleSentinel(address newPriceOracleSentinel);
+  }
+
+  /// @inheritdoc IAddressProvider
   function getACLManager() external view override returns (address) {
     return LibAddressProvider.getACLManager();
   }
@@ -98,19 +112,7 @@ contract AddressProvider is IAddressProvider, OwnableInternal {
     LibAddressProvider.setACLAdmin(address newAclAdmin);
   }
 
-  /// @inheritdoc IAddressProvider
-  function getPriceOracleSentinel() external view override returns (address) {
-    return LibAddressProvider.getPriceOracleSentinel();
-  }
 
-  /// @inheritdoc IAddressProvider
-  function setPriceOracleSentinel(address newPriceOracleSentinel)
-    external
-    override
-    onlyOwner
-  {
-    LibAddressProvider.setPriceOracleSentinel(address newPriceOracleSentinel);
-  }
 
   /// @inheritdoc IAddressProvider
   function getPoolDataProvider() external view override returns (address) {

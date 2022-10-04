@@ -1,16 +1,16 @@
 // SPDX-License-Identifier: BUSL-1.1
 pragma solidity 0.8.10;
 
-import {GPv2SafeERC20} from '../../../dependencies/gnosis/contracts/GPv2SafeERC20.sol';
-import {IERC20} from '../../../dependencies/openzeppelin/contracts/IERC20.sol';
-import {IPriceOracleGetter} from '../../../interfaces/IPriceOracleGetter.sol';
-import {UserConfiguration} from '../configuration/UserConfiguration.sol';
-import {Errors} from '../helpers/Errors.sol';
-import {WadRayMath} from '../math/WadRayMath.sol';
-import {PercentageMath} from '../math/PercentageMath.sol';
-import {DataTypes} from '../types/DataTypes.sol';
-import {ValidationLogic} from './ValidationLogic.sol';
-import {ReserveLogic} from './ReserveLogic.sol';
+import { GPv2SafeERC20 } from "../../dependencies/gnosis/contracts/GPv2SafeERC20.sol";
+import { IERC20 } from "../../dependencies/openzeppelin/contracts/IERC20.sol";
+import { IPriceOracle } from "../../interfaces/IPriceOracle.sol";
+import { UserConfiguration } from "../configuration/UserConfiguration.sol";
+import { Errors } from "../utils/Errors.sol";
+import { WadRayMath } from "../math/WadRayMath.sol";
+import { PercentageMath } from "../math/PercentageMath.sol";
+import { DataTypes } from "../types/DataTypes.sol";
+import { ValidationLogic } from "./ValidationLogic.sol";
+import { ReserveLogic } from "./ReserveLogic.sol";
 
 /**
  * @title EModeLogic library
@@ -85,7 +85,7 @@ library EModeLogic {
    **/
   function getEModeConfiguration(
     DataTypes.EModeCategory storage category,
-    IPriceOracleGetter oracle
+    IPriceOracle oracle
   )
     internal
     view
@@ -111,11 +111,10 @@ library EModeLogic {
    * @param eModeAssetCategory The asset eMode category
    * @return True if eMode is active and the asset belongs to the eMode category chosen by the user, false otherwise
    **/
-  function isInEModeCategory(uint256 eModeUserCategory, uint256 eModeAssetCategory)
-    internal
-    pure
-    returns (bool)
-  {
+  function isInEModeCategory(
+    uint256 eModeUserCategory,
+    uint256 eModeAssetCategory
+  ) internal pure returns (bool) {
     return (eModeUserCategory != 0 && eModeAssetCategory == eModeUserCategory);
   }
 }

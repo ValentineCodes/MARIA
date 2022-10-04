@@ -2,23 +2,23 @@
 
 pragma solidity ^0.8.10;
 
-import { IMariaPriceOracle } from "../../interfaces/IMariaPriceOracle.sol";
+import { IPriceOracle } from "../../interfaces/IPriceOracle.sol";
 import { IAddressProvider } from "../../interfaces/IAddressProvider.sol";
 import { IACLManager } from "../../interfaces/IACLManager.sol";
 import { Errors } from "../../libraries/utils/Errors.sol";
-import { LibMariaPriceOracle } from "../../libraries/facets/LibMariaPriceOracle.sol";
+import { LibPriceOracle } from "../../libraries/facets/LibPriceOracle.sol";
 import { LayoutTypes } from "../../libraries/types/LayoutTypes.sol";
 import { OwnableInternal } from "../../dependencies/solidstate/contracts/access/ownable/OwnableInternal.sol";
 
 /**
- * @title MariaPriceOracle
+ * @title PriceOracle
  * @author Maria
  * @notice This gets asset prices from Chainlink Aggregators and manages asset sources
  * - Owned by the Maria governance
  */
 
-contract MariaPriceOracle is OwnableInternal {
-  using LibMariaPriceOracle for LayoutTypes.MariaPriceOracleLayout;
+contract PriceOracle is OwnableInternal {
+  using LibPriceOracle for LayoutTypes.PriceOracleLayout;
 
   IAddressProvider public immutable ADDRESS_PROVIDER;
 
@@ -43,15 +43,15 @@ contract MariaPriceOracle is OwnableInternal {
     address[] memory assets,
     address[] memory sources,
   ) external onlyOwner {
-    LibMariaPriceOracle.layout().initialize(assets, sources);
+    LibPriceOracle.layout().initialize(assets, sources);
   }
 
-  /// @inheritdoc IMariaPriceOracle
+  /// @inheritdoc IPriceOracle
   function setAssetSources(
     address[] calldata assets,
     address[] calldata sources
   ) external override onlyAssetListingOrPoolAdmins {
-    LibMariaPriceOracle._setAssetsSources(assets, sources);
+    LibPriceOracle._setAssetsSources(assets, sources);
   }
 
   /// @inheritdoc IPriceOracleGetter
@@ -61,26 +61,26 @@ contract MariaPriceOracle is OwnableInternal {
     override
     returns (uint256)
   {
-    return LibMariaPriceOracle.getAssetPrice(asset);
+    return LibPriceOracle.getAssetPrice(asset);
   }
 
-  /// @inheritdoc IMariaPriceOracle
+  /// @inheritdoc IPriceOracle
   function getAssetsPrices(address[] calldata assets)
     external
     view
     override
     returns (uint256[] memory)
   {
-    return LibMariaPriceOracle.getAssetsPrices(assets);
+    return LibPriceOracle.getAssetsPrices(assets);
   }
 
-  /// @inheritdoc IMariaPriceOracle
+  /// @inheritdoc IPriceOracle
   function getAssetSource(address asset)
     external
     view
     override
     returns (address)
   {
-    return LibMariaPriceOracle.getAssetSource(asset);
+    return LibPriceOracle.getAssetSource(asset);
   }
 }

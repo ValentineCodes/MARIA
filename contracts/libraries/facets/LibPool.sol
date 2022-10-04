@@ -174,7 +174,8 @@ library LibPool {
   function withdraw(
     address asset,
     uint256 amount,
-    address to
+    address to,
+    address oracle
   ) internal returns (uint256) {
     LayoutTypes.PoolLayout storage s = layout();
 
@@ -241,7 +242,9 @@ library LibPool {
     uint256 interestRateMode,
     uint16 referralCode,
     address onBehalfOf,
-    bool releaseUnderlying
+    bool releaseUnderlying,
+    address oracle,
+    address priceOracleSentinel
   ) internal {
     LayoutTypes.PoolLayout storage s = layout();
 

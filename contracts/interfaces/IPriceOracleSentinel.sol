@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0
 pragma solidity 0.8.10;
 
-import {IPoolAddressesProvider} from './IPoolAddressesProvider.sol';
+import { IAddressProvider } from "./IAddressProvider.sol";
 
 /**
  * @title IPriceOracleSentinel
@@ -10,22 +10,10 @@ import {IPoolAddressesProvider} from './IPoolAddressesProvider.sol';
  */
 interface IPriceOracleSentinel {
   /**
-   * @dev Emitted after the sequencer oracle is updated
-   * @param newSequencerOracle The new sequencer oracle
-   */
-  event SequencerOracleUpdated(address newSequencerOracle);
-
-  /**
-   * @dev Emitted after the grace period is updated
-   * @param newGracePeriod The new grace period value
-   */
-  event GracePeriodUpdated(uint256 newGracePeriod);
-
-  /**
    * @notice Returns the PoolAddressesProvider
    * @return The address of the PoolAddressesProvider contract
    */
-  function ADDRESSES_PROVIDER() external view returns (IPoolAddressesProvider);
+  function ADDRESSES_PROVIDER() external view returns (IAddressProvider);
 
   /**
    * @notice Returns true if the `borrow` operation is allowed.
@@ -42,22 +30,17 @@ interface IPriceOracleSentinel {
   function isLiquidationAllowed() external view returns (bool);
 
   /**
-   * @notice Updates the address of the sequencer oracle
-   * @param newSequencerOracle The address of the new Sequencer Oracle to use
+   * @notice Updates the health status of the sequencer.
+   * @param isDown True if the sequencer is down, false otherwise
+   * @param timestamp The timestamp of last time the sequencer got up
    */
-  function setSequencerOracle(address newSequencerOracle) external;
+  function setAnswer(bool isDown, uint256 timestamp) external;
 
   /**
    * @notice Updates the duration of the grace period
    * @param newGracePeriod The value of the new grace period duration
    */
   function setGracePeriod(uint256 newGracePeriod) external;
-
-  /**
-   * @notice Returns the SequencerOracle
-   * @return The address of the sequencer oracle contract
-   */
-  function getSequencerOracle() external view returns (address);
 
   /**
    * @notice Returns the grace period

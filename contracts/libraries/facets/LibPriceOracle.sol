@@ -6,7 +6,7 @@ import { LayoutTypes } from "../types/LayoutTypes.sol";
 import { Query } from "../utils/Query.sol";
 import { Errors } from "../utils/Errors.sol";
 
-library LibMariaPriceOracle {
+library LibPriceOracle {
   /**
    * @dev Emitted after the price source of an asset is updated
    * @param asset The address of the asset
@@ -14,13 +14,12 @@ library LibMariaPriceOracle {
    */
   event AssetSourceUpdated(address indexed asset, address indexed source);
 
-  bytes32 internal constant STORAGE_SLOT =
-    keccak256("mariaPriceOracle.storage");
+  bytes32 internal constant STORAGE_SLOT = keccak256("priceOracle.storage");
 
   address public constant BASE_CURRENCY = 0x0; // 0x0 => USD
   uint256 public constant BASE_CURRENCY_UNIT = 1;
 
-  modifier initializer(LayoutTypes.MariaPriceOracleLayout storage s) {
+  modifier initializer(LayoutTypes.PriceOracleLayout storage s) {
     uint256 revision = 0x1;
     require(
       s.initializing ||
@@ -45,7 +44,7 @@ library LibMariaPriceOracle {
   function layout()
     internal
     pure
-    returns (LayoutTypes.MariaPriceOracleLayout storage s)
+    returns (LayoutTypes.PriceOracleLayout storage s)
   {
     bytes32 slot = STORAGE_SLOT;
     assembly {
@@ -54,11 +53,11 @@ library LibMariaPriceOracle {
   }
 
   function initialize(
-    LayoutTypes.MariaPriceOracleLayout storage s,
+    LayoutTypes.PriceOracleLayout storage s,
     address[] memory assets,
-    address[] memory sources,
+    address[] memory sources
   ) internal initializer(s) {
-    _setAssetsSources( assets, sources);
+    _setAssetsSources(assets, sources);
   }
 
   /**
@@ -69,7 +68,7 @@ library LibMariaPriceOracle {
   function _setAssetsSources(address[] memory assets, address[] memory sources)
     internal
   {
-    LayoutTypes.MariaPriceOracleLayout storage s = layout();
+    LayoutTypes.PriceOracleLayout storage s = layout();
 
     require(assets.length == sources.length, Errors.INCONSISTENT_PARAMS_LENGTH);
     for (uint256 i = 0; i < assets.length; i++) {
@@ -79,15 +78,14 @@ library LibMariaPriceOracle {
   }
 
   function getAssetPrice(address asset) internal view returns (uint256) {
-    
-    LayoutTypes.MariaPriceOracleLayout storage s = layout();
+    LayoutTypes.PriceOracleLayout storage s = layout();
 
     AggregatorInterface source = s._assetsSources[asset];
 
     if (asset == BASE_CURRENCY) {
       return BASE_CURRENCY_UNIT;
     } else if (address(source) == address(0)) {
-        revert("Source unavailable");
+      revert("Source unavailable");
     } else {
       int256 price = source.latestAnswer();
       if (price > 0) {
@@ -99,26 +97,20 @@ library LibMariaPriceOracle {
   }
 }
 
-  function getAssetsPrices(address[] calldata assets)
-    internal
-    view
-    returns (uint256[] memory)
-  {
-    uint256[] memory prices = new uint256[](assets.length);
-    for (uint256 i = 0; i < assets.length; i++) {
-      prices[i] = getAssetPrice(assets[i]);
-    }
-    return prices;
+function getAssetsPrices(address[] calldata assets)
+  internal
+  view
+  returns (uint256[] memory)
+{
+  uint256[] memory prices = new uint256[](assets.length);
+  for (uint256 i = 0; i < assets.length; i++) {
+    prices[i] = getAssetPrice(assets[i]);
   }
+  return prices;
+}
 
-    function getAssetSource(address asset)
-    internal
-    view
-    returns (address)
-   {
-        LayoutTypes.MariaPriceOracleLayout storage s = layout();
+function getAssetSource(address asset) internal view returns (address) {
+  LayoutTypes.PriceOracleLayout storage s = layout();
 
-        return address(s._assetsSources[asset]);
-   }
-
-  
+  return address(s._assetsSources[asset]);
+}

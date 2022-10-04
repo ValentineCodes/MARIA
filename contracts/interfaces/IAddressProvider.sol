@@ -29,6 +29,10 @@ interface IAddressProvider {
 
   function setPriceOracle(address newPriceOracle) external;
 
+  function getPriceOracleSentinel() external view returns (address);
+
+  function setPriceOracleSentinel(address newPriceOracleSentinel) external;
+
   function getACLManager() external view returns (address);
 
   function setACLManager(address newAclManager) external;
@@ -36,10 +40,6 @@ interface IAddressProvider {
   function getACLAdmin() external view returns (address);
 
   function setACLAdmin(address newAclAdmin) external;
-
-  function getPriceOracleSentinel() external view returns (address);
-
-  function setPriceOracleSentinel(address newPriceOracleSentinel) external;
 
   function getPoolDataProvider() external view returns (address);
 

@@ -7,7 +7,7 @@ import { IERC20 } from "../../../dependencies/openzeppelin/contracts/IERC20.sol"
 import { IMToken } from "../../../interfaces/IMToken.sol";
 import { IFlashLoanReceiver } from "../../../flashloan/interfaces/IFlashLoanReceiver.sol";
 import { IFlashLoanSimpleReceiver } from "../../../flashloan/interfaces/IFlashLoanSimpleReceiver.sol";
-import { IPoolAddressesProvider } from "../../../interfaces/IPoolAddressesProvider.sol";
+import { IAddressProvider } from "../../../interfaces/IAddressProvider.sol";
 import { UserConfiguration } from "../configuration/UserConfiguration.sol";
 import { ReserveConfiguration } from "../configuration/ReserveConfiguration.sol";
 import { Errors } from "../helpers/Errors.sol";
@@ -154,12 +154,10 @@ library FlashLoanLogic {
             maxStableRateBorrowSizePercent: params
               .maxStableRateBorrowSizePercent,
             reservesCount: params.reservesCount,
-            oracle: IPoolAddressesProvider(params.addressesProvider)
-              .getPriceOracle(),
+            oracle: IAddressProvider(params.addressesProvider).getPriceOracle(),
             userEModeCategory: params.userEModeCategory,
-            priceOracleSentinel: IPoolAddressesProvider(
-              params.addressesProvider
-            ).getPriceOracleSentinel()
+            priceOracleSentinel: IAddressProvider(params.addressesProvider)
+              .getPriceOracleSentinel()
           })
         );
         // no premium is paid when taking on the flashloan as debt

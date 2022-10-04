@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: BUSL-1.1
 pragma solidity 0.8.10;
 
-import { IERC20 } from "../../../dependencies/openzeppelin/contracts/IERC20.sol";
-import { IScaledBalanceToken } from "../../../interfaces/IScaledBalanceToken.sol";
-import { IPriceOracleGetter } from "../../../interfaces/IPriceOracleGetter.sol";
+import { IERC20 } from "../../dependencies/openzeppelin/contracts/IERC20.sol";
+import { IVariableDebtToken } from "../../interfaces/IVariableDebtToken.sol";
+import { IPriceOracle } from "../../interfaces/IPriceOracle.sol";
 import { ReserveConfiguration } from "../configuration/ReserveConfiguration.sol";
 import { UserConfiguration } from "../configuration/UserConfiguration.sol";
 import { PercentageMath } from "../math/PercentageMath.sol";
@@ -85,7 +85,7 @@ library GenericLogic {
       (vars.eModeLtv, vars.eModeLiqThreshold, vars.eModeAssetPrice) = EModeLogic
         .getEModeConfiguration(
           s._eModeCategories[params.userEModeCategory],
-          IPriceOracleGetter(params.oracle)
+          IPriceOracle(params.oracle)
         );
     }
 
@@ -126,9 +126,7 @@ library GenericLogic {
       vars.assetPrice = vars.eModeAssetPrice != 0 &&
         params.userEModeCategory == vars.eModeAssetCategory
         ? vars.eModeAssetPrice
-        : IPriceOracleGetter(params.oracle).getAssetPrice(
-          vars.currentReserveAddress
-        );
+        : IPriceOracle(params.oracle).getAssetPrice(vars.currentReserveAddress);
 
       if (
         vars.liquidationThreshold != 0 &&
@@ -249,9 +247,8 @@ library GenericLogic {
     uint256 assetUnit
   ) private view returns (uint256) {
     // fetching variable debt
-    uint256 userTotalDebt = IScaledBalanceToken(
-      reserve.variableDebtTokenAddress
-    ).scaledBalanceOf(user);
+    uint256 userTotalDebt = IVariableDebtToken(reserve.variableDebtTokenAddress)
+      .scaledBalanceOf(user);
     if (userTotalDebt != 0) {
       userTotalDebt = userTotalDebt.rayMul(reserve.getNormalizedDebt());
     }
@@ -285,7 +282,7 @@ library GenericLogic {
   ) private view returns (uint256) {
     uint256 normalizedIncome = reserve.getNormalizedIncome();
     uint256 balance = (
-      IScaledBalanceToken(reserve.mTokenAddress).scaledBalanceOf(user).rayMul(
+      IVariableDebtToken(reserve.mTokenAddress).scaledBalanceOf(user).rayMul(
         normalizedIncome
       )
     ) * assetPrice;

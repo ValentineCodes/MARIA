@@ -7,10 +7,17 @@ import {DataTypes} from "../../../libraries/types/DataTypes.sol";
 import {LayoutTypes} from "../../../libraries/types/LayoutTypes.sol";
 import {OwnableInternal} from "../../../dependencies/solidstate/contracts/access/ownable/OwnableInternal.sol";
 import {IERC20WithPermit} from '../../../interfaces/IERC20WithPermit.sol';
+import {IAddressProvider} from '../../../interfaces/IAddressProvider.sol';
 import {IPool} from "../../../interfaces/IPool.sol";
 
 contract Pool is IPool, OwnableInternal {
     using LibPool for LayoutTypes.PoolLayout;
+
+    IAddressProvider public immutable ADDRESS_PROVIDER;
+
+    constructor(address addressProvider) {
+        ADDRESS_PROVIDER = IAddressProvider(addressProvider);
+    }
 
     function initializePool(LayoutTypes.PoolLayout storage s)
         external
@@ -69,7 +76,7 @@ contract Pool is IPool, OwnableInternal {
         uint256 amount,
         address to
     ) external override returns (uint256) {
-       return LibPool.withdraw(asset, amount, to);
+       return LibPool.withdraw(asset, amount, to, ADDRESS_PROVIDER.getPriceOracle());
     }
 
     /// @inheritdoc IPool
@@ -86,7 +93,9 @@ contract Pool is IPool, OwnableInternal {
             DataTypes.InterestRateMode(interestRateMode),
             referralCode,
             onBehalfOf, 
-            true
+            true,
+            ADDRESS_PROVIDER.getPriceOracle(),
+            ADDRESS_PROVIDER.getPriceOracleSentinel();
         )
     }
 

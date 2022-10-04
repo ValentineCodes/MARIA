@@ -84,11 +84,26 @@ library LayoutTypes {
         bool initializing;
     }
 
-    struct MariaPriceOracleLayout {
+    struct PriceOracleLayout {
         // Map of asset price sources (asset => priceSource)
         mapping(address => AggregatorInterface) _assetsSources;
 
         /**
+         * @dev Indicates that the contract has been initialized.
+         */
+        uint256 lastInitializedRevision;
+
+        /**
+         * @dev Indicates that the contract is in the process of being initialized.
+         */
+        bool initializing;
+    }
+
+    struct PriceOracleSentinelLayout {
+        bool _isDown;
+        uint256 _timestampGotUp;
+        uint256 _gracePeriod;
+                /**
          * @dev Indicates that the contract has been initialized.
          */
         uint256 lastInitializedRevision;
