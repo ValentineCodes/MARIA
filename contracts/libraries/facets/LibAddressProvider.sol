@@ -251,7 +251,7 @@ library LibAddressProvider {
   }
 
   /**
-   * @notice Updates the identifier of the Aave market.
+   * @notice Updates the identifier of the Maria market.
    * @param newMarketId The new id of the market
    **/
   function _setMarketId(

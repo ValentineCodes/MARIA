@@ -3,7 +3,7 @@ pragma solidity 0.8.10;
 
 /**
  * @title CalldataLogic library
- * @author Aave
+ * @author Maria
  * @notice Library to decode calldata, used to optimize calldata size in L2Pool for transaction cost reduction
  */
 library CalldataLogic {
@@ -15,7 +15,10 @@ library CalldataLogic {
    * @return The amount to supply
    * @return The referralCode
    */
-  function decodeSupplyParams(mapping(uint256 => address) storage reservesList, bytes32 args)
+  function decodeSupplyParams(
+    mapping(uint256 => address) storage reservesList,
+    bytes32 args
+  )
     internal
     view
     returns (
@@ -67,7 +70,10 @@ library CalldataLogic {
       deadline := and(shr(160, args), 0xFFFFFFFF)
       permitV := and(shr(192, args), 0xFF)
     }
-    (address asset, uint256 amount, uint16 referralCode) = decodeSupplyParams(reservesList, args);
+    (address asset, uint256 amount, uint16 referralCode) = decodeSupplyParams(
+      reservesList,
+      args
+    );
 
     return (asset, amount, referralCode, deadline, permitV);
   }
@@ -79,11 +85,10 @@ library CalldataLogic {
    * @return The address of the underlying reserve
    * @return The amount to withdraw
    */
-  function decodeWithdrawParams(mapping(uint256 => address) storage reservesList, bytes32 args)
-    internal
-    view
-    returns (address, uint256)
-  {
+  function decodeWithdrawParams(
+    mapping(uint256 => address) storage reservesList,
+    bytes32 args
+  ) internal view returns (address, uint256) {
     uint16 assetId;
     uint256 amount;
     assembly {
@@ -105,7 +110,10 @@ library CalldataLogic {
    * @return The interestRateMode, 1 for stable or 2 for variable debt
    * @return The referralCode
    */
-  function decodeBorrowParams(mapping(uint256 => address) storage reservesList, bytes32 args)
+  function decodeBorrowParams(
+    mapping(uint256 => address) storage reservesList,
+    bytes32 args
+  )
     internal
     view
     returns (
@@ -138,7 +146,10 @@ library CalldataLogic {
    * @return The amount to repay
    * @return The interestRateMode, 1 for stable or 2 for variable debt
    */
-  function decodeRepayParams(mapping(uint256 => address) storage reservesList, bytes32 args)
+  function decodeRepayParams(
+    mapping(uint256 => address) storage reservesList,
+    bytes32 args
+  )
     internal
     view
     returns (
@@ -191,10 +202,11 @@ library CalldataLogic {
     uint256 deadline;
     uint8 permitV;
 
-    (address asset, uint256 amount, uint256 interestRateMode) = decodeRepayParams(
-      reservesList,
-      args
-    );
+    (
+      address asset,
+      uint256 amount,
+      uint256 interestRateMode
+    ) = decodeRepayParams(reservesList, args);
 
     assembly {
       deadline := and(shr(152, args), 0xFFFFFFFF)

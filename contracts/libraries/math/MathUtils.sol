@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: BUSL-1.1
 pragma solidity 0.8.10;
 
-import {WadRayMath} from './WadRayMath.sol';
+import { WadRayMath } from "./WadRayMath.sol";
 
 /**
  * @title MathUtils library
- * @author Aave
+ * @author Maria
  * @notice Provides functions to perform linear and compounded interest calculations
  */
 library MathUtils {
@@ -82,7 +82,8 @@ library MathUtils {
       thirdTerm /= 6;
     }
 
-    return WadRayMath.RAY + (rate * exp) / SECONDS_PER_YEAR + secondTerm + thirdTerm;
+    return
+      WadRayMath.RAY + (rate * exp) / SECONDS_PER_YEAR + secondTerm + thirdTerm;
   }
 
   /**
@@ -96,6 +97,7 @@ library MathUtils {
     view
     returns (uint256)
   {
-    return calculateCompoundedInterest(rate, lastUpdateTimestamp, block.timestamp);
+    return
+      calculateCompoundedInterest(rate, lastUpdateTimestamp, block.timestamp);
   }
 }

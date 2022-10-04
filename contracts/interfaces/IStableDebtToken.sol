@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: AGPL-3.0
 pragma solidity 0.8.10;
 
-import {IInitializableDebtToken} from './IInitializableDebtToken.sol';
+import { IInitializableDebtToken } from "./IInitializableDebtToken.sol";
 
 /**
  * @title IStableDebtToken
- * @author Aave
+ * @author Maria
  * @notice Defines the interface for the stable debt token
  * @dev It does not inherit from IERC20 to save in code size
  **/
@@ -87,7 +87,9 @@ interface IStableDebtToken is IInitializableDebtToken {
    * @return The total stable debt
    * @return The average stable borrow rate
    **/
-  function burn(address from, uint256 amount) external returns (uint256, uint256);
+  function burn(address from, uint256 amount)
+    external
+    returns (uint256, uint256);
 
   /**
    * @notice Returns the average rate of all the stable rate loans.

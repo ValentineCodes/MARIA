@@ -17,7 +17,7 @@ import { LayoutTypes } from "../types/LayoutTypes.sol";
 
 /**
  * @title ReserveLogic library
- * @author Aave
+ * @author Maria
  * @notice Implements the logic to update the reserves state
  */
 library ReserveLogic {

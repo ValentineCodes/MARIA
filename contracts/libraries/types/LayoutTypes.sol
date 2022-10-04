@@ -55,7 +55,7 @@ library LayoutTypes {
     }
 
     struct AddressProviderLayout {
-        // Identifier of the Aave Market
+        // Identifier of the Maria Market
         string _marketId;
 
         // Map of registered addresses (identifier => registeredAddress)

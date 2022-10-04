@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: AGPL-3.0
 pragma solidity 0.8.10;
 
-import {ConfiguratorInputTypes} from '../protocol/libraries/types/ConfiguratorInputTypes.sol';
+import { ConfiguratorInputTypes } from "../protocol/libraries/types/ConfiguratorInputTypes.sol";
 
 /**
  * @title IPoolConfigurator
- * @author Aave
+ * @author Maria
  * @notice Defines the basic interface for a Pool configurator.
  **/
 interface IPoolConfigurator {
@@ -98,7 +98,11 @@ interface IPoolConfigurator {
    * @param oldBorrowCap The old borrow cap
    * @param newBorrowCap The new borrow cap
    **/
-  event BorrowCapChanged(address indexed asset, uint256 oldBorrowCap, uint256 newBorrowCap);
+  event BorrowCapChanged(
+    address indexed asset,
+    uint256 oldBorrowCap,
+    uint256 newBorrowCap
+  );
 
   /**
    * @dev Emitted when the supply cap of a reserve is updated.
@@ -106,7 +110,11 @@ interface IPoolConfigurator {
    * @param oldSupplyCap The old supply cap
    * @param newSupplyCap The new supply cap
    **/
-  event SupplyCapChanged(address indexed asset, uint256 oldSupplyCap, uint256 newSupplyCap);
+  event SupplyCapChanged(
+    address indexed asset,
+    uint256 oldSupplyCap,
+    uint256 newSupplyCap
+  );
 
   /**
    * @dev Emitted when the liquidation protocol fee of a reserve is updated.
@@ -114,7 +122,11 @@ interface IPoolConfigurator {
    * @param oldFee The old liquidation protocol fee, expressed in bps
    * @param newFee The new liquidation protocol fee, expressed in bps
    **/
-  event LiquidationProtocolFeeChanged(address indexed asset, uint256 oldFee, uint256 newFee);
+  event LiquidationProtocolFeeChanged(
+    address indexed asset,
+    uint256 oldFee,
+    uint256 newFee
+  );
 
   /**
    * @dev Emitted when the unbacked mint cap of a reserve is updated.
@@ -134,7 +146,11 @@ interface IPoolConfigurator {
    * @param oldCategoryId The old eMode asset category
    * @param newCategoryId The new eMode asset category
    **/
-  event EModeAssetCategoryChanged(address indexed asset, uint8 oldCategoryId, uint8 newCategoryId);
+  event EModeAssetCategoryChanged(
+    address indexed asset,
+    uint8 oldCategoryId,
+    uint8 newCategoryId
+  );
 
   /**
    * @dev Emitted when a new eMode category is added.
@@ -208,7 +224,11 @@ interface IPoolConfigurator {
    * @param oldDebtCeiling The old debt ceiling
    * @param newDebtCeiling The new debt ceiling
    **/
-  event DebtCeilingChanged(address indexed asset, uint256 oldDebtCeiling, uint256 newDebtCeiling);
+  event DebtCeilingChanged(
+    address indexed asset,
+    uint256 oldDebtCeiling,
+    uint256 newDebtCeiling
+  );
 
   /**
    * @dev Emitted when the the siloed borrowing state for an asset is changed.
@@ -216,14 +236,21 @@ interface IPoolConfigurator {
    * @param oldState The old siloed borrowing state
    * @param newState The new siloed borrowing state
    **/
-  event SiloedBorrowingChanged(address indexed asset, bool oldState, bool newState);
+  event SiloedBorrowingChanged(
+    address indexed asset,
+    bool oldState,
+    bool newState
+  );
 
   /**
    * @dev Emitted when the bridge protocol fee is updated.
    * @param oldBridgeProtocolFee The old protocol fee, expressed in bps
    * @param newBridgeProtocolFee The new protocol fee, expressed in bps
    */
-  event BridgeProtocolFeeUpdated(uint256 oldBridgeProtocolFee, uint256 newBridgeProtocolFee);
+  event BridgeProtocolFeeUpdated(
+    uint256 oldBridgeProtocolFee,
+    uint256 newBridgeProtocolFee
+  );
 
   /**
    * @dev Emitted when the total premium on flashloans is updated.
@@ -256,27 +283,32 @@ interface IPoolConfigurator {
    * @notice Initializes multiple reserves.
    * @param input The array of initialization parameters
    **/
-  function initReserves(ConfiguratorInputTypes.InitReserveInput[] calldata input) external;
+  function initReserves(
+    ConfiguratorInputTypes.InitReserveInput[] calldata input
+  ) external;
 
   /**
    * @dev Updates the aToken implementation for the reserve.
    * @param input The aToken update parameters
    **/
-  function updateAToken(ConfiguratorInputTypes.UpdateATokenInput calldata input) external;
+  function updateAToken(ConfiguratorInputTypes.UpdateATokenInput calldata input)
+    external;
 
   /**
    * @notice Updates the stable debt token implementation for the reserve.
    * @param input The stableDebtToken update parameters
    **/
-  function updateStableDebtToken(ConfiguratorInputTypes.UpdateDebtTokenInput calldata input)
-    external;
+  function updateStableDebtToken(
+    ConfiguratorInputTypes.UpdateDebtTokenInput calldata input
+  ) external;
 
   /**
    * @notice Updates the variable debt token implementation for the asset.
    * @param input The variableDebtToken update parameters
    **/
-  function updateVariableDebtToken(ConfiguratorInputTypes.UpdateDebtTokenInput calldata input)
-    external;
+  function updateVariableDebtToken(
+    ConfiguratorInputTypes.UpdateDebtTokenInput calldata input
+  ) external;
 
   /**
    * @notice Configures borrowing on a reserve.
@@ -356,8 +388,10 @@ interface IPoolConfigurator {
    * @param asset The address of the underlying asset of the reserve
    * @param newRateStrategyAddress The address of the new interest strategy contract
    **/
-  function setReserveInterestRateStrategyAddress(address asset, address newRateStrategyAddress)
-    external;
+  function setReserveInterestRateStrategyAddress(
+    address asset,
+    address newRateStrategyAddress
+  ) external;
 
   /**
    * @notice Pauses or unpauses all the protocol reserves. In the paused state all the protocol interactions
@@ -392,7 +426,8 @@ interface IPoolConfigurator {
    * @param asset The address of the underlying asset of the reserve
    * @param newUnbackedMintCap The new unbacked mint cap of the reserve
    **/
-  function setUnbackedMintCap(address asset, uint256 newUnbackedMintCap) external;
+  function setUnbackedMintCap(address asset, uint256 newUnbackedMintCap)
+    external;
 
   /**
    * @notice Assign an efficiency mode (eMode) category to asset.
@@ -444,7 +479,8 @@ interface IPoolConfigurator {
    * @dev The premium is calculated on the total amount borrowed
    * @param newFlashloanPremiumTotal The total flashloan premium
    */
-  function updateFlashloanPremiumTotal(uint128 newFlashloanPremiumTotal) external;
+  function updateFlashloanPremiumTotal(uint128 newFlashloanPremiumTotal)
+    external;
 
   /**
    * @notice Updates the flash loan premium collected by protocol reserves
@@ -452,7 +488,9 @@ interface IPoolConfigurator {
    * @dev The premium to protocol is calculated on the total flashloan premium
    * @param newFlashloanPremiumToProtocol The part of the flashloan premium sent to the protocol treasury
    */
-  function updateFlashloanPremiumToProtocol(uint128 newFlashloanPremiumToProtocol) external;
+  function updateFlashloanPremiumToProtocol(
+    uint128 newFlashloanPremiumToProtocol
+  ) external;
 
   /**
    * @notice Sets the debt ceiling for an asset.

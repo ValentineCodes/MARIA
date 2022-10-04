@@ -7,7 +7,7 @@ import { IInitializableAToken } from "./IInitializableAToken.sol";
 
 /**
  * @title IMToken
- * @author Aave
+ * @author Maria
  * @notice Defines the basic interface for an AToken.
  **/
 interface IMToken is IERC20, IScaledBalanceToken, IInitializableAToken {
@@ -122,8 +122,8 @@ interface IMToken is IERC20, IScaledBalanceToken, IInitializableAToken {
   function UNDERLYING_ASSET_ADDRESS() external view returns (address);
 
   /**
-   * @notice Returns the address of the Aave treasury, receiving the fees on this aToken.
-   * @return Address of the Aave treasury
+   * @notice Returns the address of the Maria treasury, receiving the fees on this aToken.
+   * @return Address of the Maria treasury
    **/
   function RESERVE_TREASURY_ADDRESS() external view returns (address);
 

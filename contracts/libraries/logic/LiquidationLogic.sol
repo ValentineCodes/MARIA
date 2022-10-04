@@ -21,7 +21,7 @@ import { IPriceOracleGetter } from "../../../interfaces/IPriceOracleGetter.sol";
 
 /**
  * @title LiquidationLogic library
- * @author Aave
+ * @author Maria
  * @notice Implements actions involving management of collateral in the protocol, the main one being the liquidations
  **/
 library LiquidationLogic {

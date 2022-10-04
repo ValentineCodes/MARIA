@@ -4,7 +4,7 @@ pragma solidity 0.8.10;
 import { IPool } from "../../../interfaces/IPool.sol";
 import { IInitializableAToken } from "../../../interfaces/IInitializableAToken.sol";
 import { IInitializableDebtToken } from "../../../interfaces/IInitializableDebtToken.sol";
-import { IAaveIncentivesController } from "../../../interfaces/IAaveIncentivesController.sol";
+import { IMariaIncentivesController } from "../../../interfaces/IMariaIncentivesController.sol";
 import { InitializableImmutableAdminUpgradeabilityProxy } from "../aave-upgradeability/InitializableImmutableAdminUpgradeabilityProxy.sol";
 import { ReserveConfiguration } from "../configuration/ReserveConfiguration.sol";
 import { DataTypes } from "../types/DataTypes.sol";
@@ -12,7 +12,7 @@ import { ConfiguratorInputTypes } from "../types/ConfiguratorInputTypes.sol";
 
 /**
  * @title ConfiguratorLogic library
- * @author Aave
+ * @author Maria
  * @notice Implements the functions to initialize reserves and update aTokens and debtTokens
  */
 library ConfiguratorLogic {

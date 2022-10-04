@@ -3,7 +3,7 @@ pragma solidity 0.8.10;
 
 /**
  * @title WadRayMath library
- * @author Aave
+ * @author Maria
  * @notice Provides functions to perform calculations with Wad and Ray units
  * @dev Provides mul and div function for wads (decimal numbers with 18 digits of precision) and rays (decimal numbers
  * with 27 digits of precision)
@@ -47,7 +47,10 @@ library WadRayMath {
   function wadDiv(uint256 a, uint256 b) internal pure returns (uint256 c) {
     // to avoid overflow, a <= (type(uint256).max - halfB) / WAD
     assembly {
-      if or(iszero(b), iszero(iszero(gt(a, div(sub(not(0), div(b, 2)), WAD))))) {
+      if or(
+        iszero(b),
+        iszero(iszero(gt(a, div(sub(not(0), div(b, 2)), WAD))))
+      ) {
         revert(0, 0)
       }
 
@@ -83,7 +86,10 @@ library WadRayMath {
   function rayDiv(uint256 a, uint256 b) internal pure returns (uint256 c) {
     // to avoid overflow, a <= (type(uint256).max - halfB) / RAY
     assembly {
-      if or(iszero(b), iszero(iszero(gt(a, div(sub(not(0), div(b, 2)), RAY))))) {
+      if or(
+        iszero(b),
+        iszero(iszero(gt(a, div(sub(not(0), div(b, 2)), RAY))))
+      ) {
         revert(0, 0)
       }
 

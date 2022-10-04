@@ -17,7 +17,7 @@ import { IsolationModeLogic } from "./IsolationModeLogic.sol";
 
 /**
  * @title BorrowLogic library
- * @author Aave
+ * @author Maria
  * @notice Implements the base logic for all the actions related to borrowing
  */
 library BorrowLogic {
@@ -58,7 +58,7 @@ library BorrowLogic {
 
   /**
    * @notice Implements the borrow feature. Borrowing allows users that provided collateral to draw liquidity from the
-   * Aave protocol proportionally to their collateralization power. For isolated positions, it also increases the
+   * Maria protocol proportionally to their collateralization power. For isolated positions, it also increases the
    * isolated debt.
    * @dev  Emits the `Borrow()` event
    * @param reservesData The state of all the reserves

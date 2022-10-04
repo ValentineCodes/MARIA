@@ -15,7 +15,7 @@ import { ReserveConfiguration } from "../configuration/ReserveConfiguration.sol"
 
 /**
  * @title SupplyLogic library
- * @author Aave
+ * @author Maria
  * @notice Implements the base logic for supply/withdraw
  */
 library SupplyLogic {
@@ -51,7 +51,7 @@ library SupplyLogic {
   );
 
   /**
-   * @notice Implements the supply feature. Through `supply()`, users supply assets to the Aave protocol.
+   * @notice Implements the supply feature. Through `supply()`, users supply assets to the Maria protocol.
    * @dev Emits the `Supply()` event.
    * @dev In the first supply action, `ReserveUsedAsCollateralEnabled()` is emitted, if the asset can be enabled as
    * collateral.
@@ -123,7 +123,7 @@ library SupplyLogic {
 
   /**
    * @notice Implements the withdraw feature. Through `withdraw()`, users redeem their aTokens for the underlying asset
-   * previously supplied in the Aave protocol.
+   * previously supplied in the Maria protocol.
    * @dev Emits the `Withdraw()` event.
    * @dev If the user withdraws everything, `ReserveUsedAsCollateralDisabled()` is emitted.
    * @param reservesData The state of all the reserves

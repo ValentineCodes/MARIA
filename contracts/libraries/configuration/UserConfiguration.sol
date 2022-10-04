@@ -9,7 +9,7 @@ import { LayoutTypes } from "../types/LayoutTypes.sol";
 
 /**
  * @title UserConfiguration library
- * @author Aave
+ * @author Maria
  * @notice Implements the bitmap logic to handle the user configuration
  */
 library UserConfiguration {
@@ -199,13 +199,16 @@ library UserConfiguration {
   /**
    * @notice Returns the Isolation Mode state of the user
    * @param self The configuration object
+   * @param reservesData The state of all the reserves
+   * @param reservesList The addresses of all the active reserves
    * @return True if the user is in isolation mode, false otherwise
    * @return The address of the only asset used as collateral
    * @return The debt ceiling of the reserve
    */
   function getIsolationModeState(
-    LayoutTypes.PoolLayout storage s,
-    DataTypes.UserConfigurationMap memory self
+    DataTypes.UserConfigurationMap memory self,
+    mapping(address => DataTypes.ReserveData) storage reservesData,
+    mapping(uint256 => address) storage reservesList
   )
     internal
     view
@@ -218,9 +221,8 @@ library UserConfiguration {
     if (isUsingAsCollateralOne(self)) {
       uint256 assetId = _getFirstAssetIdByMask(self, COLLATERAL_MASK);
 
-      address assetAddress = s._reservesList[assetId];
-      uint256 ceiling = s
-        ._reserves[assetAddress]
+      address assetAddress = reservesList[assetId];
+      uint256 ceiling = reservesData[assetAddress]
         .configuration
         .getDebtCeiling();
       if (ceiling != 0) {

@@ -3,8 +3,8 @@ pragma solidity 0.8.10;
 
 /**
  * @title IPriceOracleGetter
- * @author Aave
- * @notice Interface for the Aave price oracle.
+ * @author Maria
+ * @notice Interface for the Maria price oracle.
  **/
 interface IPriceOracleGetter {
   /**

@@ -3,8 +3,8 @@ pragma solidity 0.8.10;
 
 /**
  * @title IL2Pool
- * @author Aave
- * @notice Defines the basic extension interface for an L2 Aave Pool.
+ * @author Maria
+ * @notice Defines the basic extension interface for an L2 Maria Pool.
  **/
 interface IL2Pool {
   /**

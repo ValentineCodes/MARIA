@@ -3,8 +3,8 @@ pragma solidity 0.8.10;
 
 /**
  * @title IAddressProviderRegistry
- * @author Aave
- * @notice Defines the basic interface for an Aave Pool Addresses Provider Registry.
+ * @author Maria
+ * @notice Defines the basic interface for an Maria Pool Addresses Provider Registry.
  **/
 interface IAddressProviderRegistry {
   /**

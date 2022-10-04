@@ -5,7 +5,7 @@ import { IAddressProvider } from "./IAddressProvider.sol";
 
 /**
  * @title IACLManager
- * @author Aave
+ * @author Maria
  * @notice Defines the basic interface for the ACL Manager
  **/
 interface IACLManager {

@@ -33,7 +33,12 @@ contract Pool is IPool, OwnableInternal {
         address onBehalfOf,
         uint16 referralCode
     ) external override {
+        LayoutTypes.PoolLayout storage s = LibPool.layout();
+
         LibPool.supply(
+            s._reserves,
+            s._reservesList,
+            s._usersConfig[onBehalfOf],
             address asset,
             uint256 amount,
             address onBehalfOf,
@@ -52,6 +57,8 @@ contract Pool is IPool, OwnableInternal {
         bytes32 permitR,
         bytes32 permitS
     ) external override {
+        LayoutTypes.PoolLayout storage s = LibPool.layout();
+
         IERC20WithPermit(asset).permit(
             msg.sender,
             address(this),
@@ -63,6 +70,9 @@ contract Pool is IPool, OwnableInternal {
         );
 
         LibPool.supply(
+            s._reserves,
+            s._reservesList,
+            s._usersConfig[onBehalfOf],
             address asset,
             uint256 amount,
             address onBehalfOf,
@@ -76,7 +86,19 @@ contract Pool is IPool, OwnableInternal {
         uint256 amount,
         address to
     ) external override returns (uint256) {
-       return LibPool.withdraw(asset, amount, to, ADDRESS_PROVIDER.getPriceOracle());
+        LayoutTypes.PoolLayout storage s = LibPool.layout();
+
+       return LibPool.withdraw(  
+        s._reserves,
+        s._reservesList,
+        s._eModeCategories,
+        s._usersConfig[msg.sender],
+        s._reservesCount,
+        s._usersEModeCategory[msg.sender],
+        asset, 
+        amount, 
+        to,
+        ADDRESS_PROVIDER.getPriceOracle());
     }
 
     /// @inheritdoc IPool
@@ -87,7 +109,16 @@ contract Pool is IPool, OwnableInternal {
         uint16 referralCode,
         address onBehalfOf
     ) external override {
+        LayoutTypes.PoolLayout storage s = LibPool.layout();
+
         LibPool.borrow(
+            s._reserves,
+            s._reservesList,
+            s._eModeCategories,
+            s._usersConfig[onBehalfOf],
+            s._maxStableRateBorrowSizePercent,
+            s._reservesCount,
+            s._usersEModeCategory[onBehalfOf],
             asset,
             amount,
             DataTypes.InterestRateMode(interestRateMode),
@@ -106,7 +137,18 @@ contract Pool is IPool, OwnableInternal {
         uint256 interestRateMode,
         address onBehalfOf
     ) external override returns (uint256) {
-       return LibPool.repay(asset, amount, DataTypes.InterestRateMode(interestRateMode), onBehalfOf, false);
+        LayoutTypes.PoolLayout storage s = LibPool.layout();
+
+       return LibPool.repay(        
+            s._reserves,
+            s._reservesList,
+            s._usersConfig[onBehalfOf],
+            asset, 
+            amount, 
+            DataTypes.InterestRateMode(interestRateMode), 
+            onBehalfOf, 
+            false
+        );
     }
 
     /// @inheritdoc IPool
@@ -120,6 +162,8 @@ contract Pool is IPool, OwnableInternal {
         bytes32 permitR,
         bytes32 permitS
     ) external override returns (uint256) {
+        LayoutTypes.PoolLayout storage s = LibPool.layout();
+
         IERC20WithPermit(asset).permit(
             msg.sender,
             address(this),
@@ -130,7 +174,16 @@ contract Pool is IPool, OwnableInternal {
             permitS
         );
         
-        return LibPool.repay(asset, amount, DataTypes.InterestRateMode(interestRateMode), onBehalfOf, false);
+        return LibPool.repay(        
+            s._reserves,
+            s._reservesList,
+            s._usersConfig[onBehalfOf],
+            asset, 
+            amount, 
+            DataTypes.InterestRateMode(interestRateMode), 
+            onBehalfOf, 
+            false
+        );
     }
 
     /// @inheritdoc IPool
@@ -139,26 +192,64 @@ contract Pool is IPool, OwnableInternal {
         uint256 amount,
         uint256 interestRateMode
     ) external override returns (uint256) {
-        return LibPool.repay(asset, amount, DataTypes.InterestRateMode(interestRateMode), onBehalfOf, true);
+        LayoutTypes.PoolLayout storage s = LibPool.layout();
+
+        returnLibPool.repay(        
+            s._reserves,
+            s._reservesList,
+            s._usersConfig[onBehalfOf],
+            asset, 
+            amount, 
+            DataTypes.InterestRateMode(interestRateMode), 
+            onBehalfOf, 
+            true
+        );
     }
 
     /// @inheritdoc IPool
     function swapBorrowRateMode(address asset, uint256 interestRateMode)
         external
         override
-    {}
+    {
+        LayoutTypes.PoolLayout storage s = LibPool.layout();
+
+        LibPool.swapBorrowRateMode( 
+            s._reserves[asset],
+            s._usersConfig[msg.sender],
+            asset, 
+            DataTypes.InterestRateMode(interestRateMode)
+        );
+    }
 
     /// @inheritdoc IPool
     function rebalanceStableBorrowRate(address asset, address user)
         external
         override
-    {}
+    {
+        LayoutTypes.PoolLayout storage s = LibPool.layout();
+
+        LibPool.rebalanceStableBorrowRate(s._reserves[asset], asset, user);
+    }
 
     /// @inheritdoc IPool
     function setUserUseReserveAsCollateral(address asset, bool useAsCollateral)
         external
         override
-    {}
+    {
+        LayoutTypes.PoolLayout storage s = LibPool.layout();
+
+        LibPool.setUserUseReserveAsCollateral(      
+            s._reserves,
+            s._reservesList,
+            s._eModeCategories,
+            s._usersConfig[msg.sender],
+            asset,
+            useAsCollateral,
+            s._reservesCount,
+            ADDRESSES_PROVIDER.getPriceOracle(),
+            s._usersEModeCategory[msg.sender]
+        );
+    }
 
     /// @inheritdoc IPool
     function liquidationCall(

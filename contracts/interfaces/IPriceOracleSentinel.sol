@@ -5,7 +5,7 @@ import { IAddressProvider } from "./IAddressProvider.sol";
 
 /**
  * @title IPriceOracleSentinel
- * @author Aave
+ * @author Maria
  * @notice Defines the basic interface for the PriceOracleSentinel
  */
 interface IPriceOracleSentinel {

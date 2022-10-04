@@ -123,17 +123,15 @@ library LibPool {
   }
 
   function supply(
+    mapping(address => DataTypes.ReserveData) storage reservesData,
+    mapping(uint256 => address) storage reservesList,
+    DataTypes.UserConfigurationMap storage userConfig,
     address asset,
     uint256 amount,
     address onBehalfOf,
     uint16 referralCode
   ) internal {
-    LayoutTypes.PoolLayout storage s = layout();
-
-    DataTypes.UserConfigurationMap storage userConfig = s._usersConfig[
-      onBehalfOf
-    ];
-    DataTypes.ReserveData storage reserve = s._reserves[asset];
+    DataTypes.ReserveData storage reserve = reservesData[asset];
     DataTypes.ReserveCache memory reserveCache = reserve.cache();
 
     reserve.updateState(reserveCache);
@@ -158,7 +156,8 @@ library LibPool {
     if (isFirstSupply) {
       if (
         ValidationLogic.validateUseAsCollateral(
-          s,
+          reservesData,
+          reservesList,
           userConfig,
           reserveCache.reserveConfiguration
         )
@@ -172,17 +171,18 @@ library LibPool {
   }
 
   function withdraw(
+    mapping(address => DataTypes.ReserveData) storage reservesData,
+    mapping(uint256 => address) storage reservesList,
+    mapping(uint8 => DataTypes.EModeCategory) storage eModeCategories,
+    DataTypes.UserConfigurationMap storage userConfig,
+    uint256 reservesCount,
+    uint8 userEModeCategory,
     address asset,
     uint256 amount,
     address to,
     address oracle
   ) internal returns (uint256) {
-    LayoutTypes.PoolLayout storage s = layout();
-
-    DataTypes.UserConfigurationMap storage userConfig = s._usersConfig[
-      onBehalfOf
-    ];
-    DataTypes.ReserveData storage reserve = s._reserves[asset];
+    DataTypes.ReserveData storage reserve = reservesData[asset];
     DataTypes.ReserveCache memory reserveCache = reserve.cache();
 
     reserve.updateState(reserveCache);
@@ -215,13 +215,15 @@ library LibPool {
     if (userConfig.isUsingAsCollateral(reserve.id)) {
       if (userConfig.isBorrowingAny()) {
         ValidationLogic.validateHFAndLtv(
-          s,
+          reservesData,
+          reservesList,
+          eModeCategories,
           userConfig,
           asset,
           msg.sender,
-          s._reservesCount,
+          reservesCount,
           oracle,
-          s._usersEModeCategory[msg.sender]
+          userEModeCategory
         );
       }
 
@@ -237,21 +239,23 @@ library LibPool {
   }
 
   function borrow(
+    mapping(address => DataTypes.ReserveData) storage reservesData,
+    mapping(uint256 => address) storage reservesList,
+    mapping(uint8 => DataTypes.EModeCategory) storage eModeCategories,
+    DataTypes.UserConfigurationMap storage userConfig,
+    maxStableRateBorrowSizePercent,
+    reservesCount,
+    userEModeCategory,
     address asset,
     uint256 amount,
-    uint256 interestRateMode,
+    DataTypes.InterestRateMode interestRateMode,
     uint16 referralCode,
     address onBehalfOf,
     bool releaseUnderlying,
     address oracle,
     address priceOracleSentinel
   ) internal {
-    LayoutTypes.PoolLayout storage s = layout();
-
-    DataTypes.UserConfigurationMap storage userConfig = s._usersConfig[
-      onBehalfOf
-    ];
-    DataTypes.ReserveData storage reserve = s._reserves[asset];
+    DataTypes.ReserveData storage reserve = reservesData[asset];
     DataTypes.ReserveCache memory reserveCache = reserve.cache();
 
     reserve.updateState(reserveCache);
@@ -260,7 +264,7 @@ library LibPool {
       bool isolationModeActive,
       address isolationModeCollateralAddress,
       uint256 isolationModeDebtCeiling
-    ) = userConfig.getIsolationModeState();
+    ) = userConfig.getIsolationModeState(reservesData.reservesList);
 
     ValidationLogic.validateBorrow(
       s,
@@ -271,10 +275,10 @@ library LibPool {
         userAddress: onBehalfOf,
         amount: amount,
         interestRateMode: interestRateMode,
-        maxStableLoanPercent: s._maxStableRateBorrowSizePercent,
-        reservesCount: s._reservesCount,
+        maxStableLoanPercent: maxStableRateBorrowSizePercent,
+        reservesCount: reservesCount,
         oracle: oracle,
-        userEModeCategory: s._usersEModeCategory[onBehalfOf],
+        userEModeCategory: userEModeCategory,
         priceOracleSentinel: priceOracleSentinel,
         isolationModeActive: isolationModeActive,
         isolationModeCollateralAddress: isolationModeCollateralAddress,
@@ -352,18 +356,16 @@ library LibPool {
   }
 
   function repay(
+    mapping(address => DataTypes.ReserveData) storage reservesData,
+    mapping(uint256 => address) storage reservesList,
+    DataTypes.UserConfigurationMap storage userConfig,
     address asset,
     uint256 amount,
-    uint256 interestRateMode,
+    DataTypes.InterestRateMode interestRateMode,
     address onBehalfOf,
     bool useMTokens
   ) internal returns (uint256) {
-    LayoutTypes.PoolLayout storage s = layout();
-
-    DataTypes.UserConfigurationMap storage userConfig = s._usersConfig[
-      onBehalfOf
-    ];
-    DataTypes.ReserveData storage reserve = s._reserves[asset];
+    DataTypes.ReserveData storage reserve = reservesData[asset];
     DataTypes.ReserveCache memory reserveCache = reserve.cache();
 
     reserve.updateState(reserveCache);
@@ -422,7 +424,8 @@ library LibPool {
     }
 
     IsolationModeLogic.updateIsolatedDebtIfIsolated(
-      s,
+      reservesData,
+      reservesList,
       userConfig,
       reserveCache,
       paybackAmount
@@ -450,6 +453,162 @@ library LibPool {
     emit Repay(asset, onBehalfOf, msg.sender, paybackAmount, useMTokens);
 
     return paybackAmount;
+  }
+
+  function swapBorrowRateMode(
+    DataTypes.ReserveData storage reserve,
+    DataTypes.UserConfigurationMap storage userConfig,
+    address asset,
+    DataTypes.InterestRateMode interestRateMode
+  ) internal {
+    DataTypes.ReserveCache memory reserveCache = reserve.cache();
+
+    reserve.updateState(reserveCache);
+
+    (uint256 stableDebt, uint256 variableDebt) = Helpers.getUserCurrentDebt(
+      msg.sender,
+      reserveCache
+    );
+
+    ValidationLogic.validateSwapRateMode(
+      reserve,
+      reserveCache,
+      userConfig,
+      stableDebt,
+      variableDebt,
+      interestRateMode
+    );
+
+    if (interestRateMode == DataTypes.InterestRateMode.STABLE) {
+      (
+        reserveCache.nextTotalStableDebt,
+        reserveCache.nextAvgStableBorrowRate
+      ) = IStableDebtToken(reserveCache.stableDebtTokenAddress).burn(
+        msg.sender,
+        stableDebt
+      );
+
+      (, reserveCache.nextScaledVariableDebt) = IVariableDebtToken(
+        reserveCache.variableDebtTokenAddress
+      ).mint(
+          msg.sender,
+          msg.sender,
+          stableDebt,
+          reserveCache.nextVariableBorrowIndex
+        );
+    } else {
+      reserveCache.nextScaledVariableDebt = IVariableDebtToken(
+        reserveCache.variableDebtTokenAddress
+      ).burn(msg.sender, variableDebt, reserveCache.nextVariableBorrowIndex);
+
+      (
+        ,
+        reserveCache.nextTotalStableDebt,
+        reserveCache.nextAvgStableBorrowRate
+      ) = IStableDebtToken(reserveCache.stableDebtTokenAddress).mint(
+        msg.sender,
+        msg.sender,
+        variableDebt,
+        reserve.currentStableBorrowRate
+      );
+    }
+
+    reserve.updateInterestRates(reserveCache, asset, 0, 0);
+
+    emit SwapBorrowRateMode(asset, msg.sender, interestRateMode);
+  }
+
+  function rebalanceStableBorrowRate(
+    DataTypes.ReserveData storage reserve,
+    address asset,
+    address user
+  ) internal {
+    DataTypes.ReserveCache memory reserveCache = reserve.cache();
+    reserve.updateState(reserveCache);
+
+    ValidationLogic.validateRebalanceStableBorrowRate(
+      reserve,
+      reserveCache,
+      asset
+    );
+
+    IStableDebtToken stableDebtToken = IStableDebtToken(
+      reserveCache.stableDebtTokenAddress
+    );
+    uint256 stableDebt = IERC20(address(stableDebtToken)).balanceOf(user);
+
+    stableDebtToken.burn(user, stableDebt);
+
+    (
+      ,
+      reserveCache.nextTotalStableDebt,
+      reserveCache.nextAvgStableBorrowRate
+    ) = stableDebtToken.mint(
+      user,
+      user,
+      stableDebt,
+      reserve.currentStableBorrowRate
+    );
+
+    reserve.updateInterestRates(reserveCache, asset, 0, 0);
+
+    emit RebalanceStableBorrowRate(asset, user);
+  }
+
+  function setUserUseReserveAsCollateral(
+    mapping(address => DataTypes.ReserveData) storage reservesData,
+    mapping(uint256 => address) storage reservesList,
+    mapping(uint8 => DataTypes.EModeCategory) storage eModeCategories,
+    DataTypes.UserConfigurationMap storage userConfig,
+    address asset,
+    bool useAsCollateral,
+    uint256 reservesCount,
+    address priceOracle,
+    uint8 userEModeCategory
+  ) external {
+    DataTypes.ReserveData storage reserve = reservesData[asset];
+    DataTypes.ReserveCache memory reserveCache = reserve.cache();
+
+    uint256 userBalance = IERC20(reserveCache.aTokenAddress).balanceOf(
+      msg.sender
+    );
+
+    ValidationLogic.validateSetUseReserveAsCollateral(
+      reserveCache,
+      userBalance
+    );
+
+    if (useAsCollateral == userConfig.isUsingAsCollateral(reserve.id)) return;
+
+    if (useAsCollateral) {
+      require(
+        ValidationLogic.validateUseAsCollateral(
+          reservesData,
+          reservesList,
+          userConfig,
+          reserveCache.reserveConfiguration
+        ),
+        Errors.USER_IN_ISOLATION_MODE
+      );
+
+      userConfig.setUsingAsCollateral(reserve.id, true);
+      emit ReserveUsedAsCollateralEnabled(asset, msg.sender);
+    } else {
+      userConfig.setUsingAsCollateral(reserve.id, false);
+      ValidationLogic.validateHFAndLtv(
+        reservesData,
+        reservesList,
+        eModeCategories,
+        userConfig,
+        asset,
+        msg.sender,
+        reservesCount,
+        priceOracle,
+        userEModeCategory
+      );
+
+      emit ReserveUsedAsCollateralDisabled(asset, msg.sender);
+    }
   }
 
   function getReserveNormalizedIncome(

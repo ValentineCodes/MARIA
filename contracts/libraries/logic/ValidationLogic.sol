@@ -23,7 +23,7 @@ import { SafeCast } from "../../dependencies/openzeppelin/contracts/SafeCast.sol
 
 /**
  * @title ReserveLogic library
- * @author Aave
+ * @author Maria
  * @notice Implements functions to validate the different actions of the protocol
  */
 library ValidationLogic {
@@ -612,7 +612,9 @@ library ValidationLogic {
 
   /**
    * @notice Validates the health factor of a user.
-   * @param s Pool storage
+   * @param reservesData The state of all the reserves
+   * @param reservesList The addresses of all the active reserves
+   * @param eModeCategories The configuration of all the efficiency mode categories
    * @param userConfig The state of the user for the specific reserve
    * @param user The user to validate health factor of
    * @param userEModeCategory The users active efficiency mode category
@@ -620,7 +622,9 @@ library ValidationLogic {
    * @param oracle The price oracle
    */
   function validateHealthFactor(
-    LayoutTypes.PoolLayout storage s,
+    mapping(address => DataTypes.ReserveData) storage reservesData,
+    mapping(uint256 => address) storage reservesList,
+    mapping(uint8 => DataTypes.EModeCategory) storage eModeCategories,
     DataTypes.UserConfigurationMap memory userConfig,
     address user,
     uint8 userEModeCategory,
@@ -629,7 +633,9 @@ library ValidationLogic {
   ) internal view returns (uint256, bool) {
     (, , , , uint256 healthFactor, bool hasZeroLtvCollateral) = GenericLogic
       .calculateUserAccountData(
-        s,
+        reservesData,
+        reservesList,
+        eModeCategories,
         DataTypes.CalculateUserAccountDataParams({
           userConfig: userConfig,
           reservesCount: reservesCount,
@@ -649,7 +655,9 @@ library ValidationLogic {
 
   /**
    * @notice Validates the health factor of a user and the ltv of the asset being withdrawn.
-   * @param s Pool storage
+   * @param reservesData The state of all the reserves
+   * @param reservesList The addresses of all the active reserves
+   * @param eModeCategories The configuration of all the efficiency mode categories
    * @param userConfig The state of the user for the specific reserve
    * @param asset The asset for which the ltv will be validated
    * @param from The user from which the aTokens are being transferred
@@ -658,7 +666,9 @@ library ValidationLogic {
    * @param userEModeCategory The users active efficiency mode category
    */
   function validateHFAndLtv(
-    LayoutTypes.PoolLayout storage s,
+    mapping(address => DataTypes.ReserveData) storage reservesData,
+    mapping(uint256 => address) storage reservesList,
+    mapping(uint8 => DataTypes.EModeCategory) storage eModeCategories,
     DataTypes.UserConfigurationMap memory userConfig,
     address asset,
     address from,
@@ -666,10 +676,12 @@ library ValidationLogic {
     address oracle,
     uint8 userEModeCategory
   ) internal view {
-    DataTypes.ReserveData memory reserve = s._reserves[asset];
+    DataTypes.ReserveData memory reserve = reservesData[asset];
 
     (, bool hasZeroLtvCollateral) = validateHealthFactor(
-      s,
+      reservesData,
+      reservesList,
+      eModeCategories,
       userConfig,
       from,
       userEModeCategory,
@@ -776,20 +788,25 @@ library ValidationLogic {
    * set as collateral, mint unbacked, and liquidate
    * @dev This is used to ensure that the constraints for isolated assets are respected by all the actions that
    * generate transfers of aTokens
-   * @param s Pool storage
+   * @param reservesData The state of all the reserves
+   * @param reservesList The addresses of all the active reserves
    * @param userConfig the user configuration
    * @param reserveConfig The reserve configuration
    * @return True if the asset can be activated as collateral, false otherwise
    **/
   function validateUseAsCollateral(
-    LayoutTypes.PoolLayout storage s,
+    mapping(address => DataTypes.ReserveData) storage reservesData,
+    mapping(uint256 => address) storage reservesList,
     DataTypes.UserConfigurationMap memory userConfig,
     DataTypes.ReserveConfigurationMap memory reserveConfig
   ) internal view returns (bool) {
     if (!userConfig.isUsingAsCollateralAny()) {
       return true;
     }
-    (bool isolationModeActive, , ) = userConfig.getIsolationModeState(s);
+    (bool isolationModeActive, , ) = userConfig.getIsolationModeState(
+      reservesData,
+      reservesList
+    );
 
     return (!isolationModeActive && reserveConfig.getDebtCeiling() == 0);
   }
