@@ -65,7 +65,7 @@ library SupplyLogic {
     mapping(uint256 => address) storage reservesList,
     DataTypes.UserConfigurationMap storage userConfig,
     DataTypes.ExecuteSupplyParams memory params
-  ) external {
+  ) internal {
     DataTypes.ReserveData storage reserve = reservesData[params.asset];
     DataTypes.ReserveCache memory reserveCache = reserve.cache();
 
@@ -139,7 +139,7 @@ library SupplyLogic {
     mapping(uint8 => DataTypes.EModeCategory) storage eModeCategories,
     DataTypes.UserConfigurationMap storage userConfig,
     DataTypes.ExecuteWithdrawParams memory params
-  ) external returns (uint256) {
+  ) internal returns (uint256) {
     DataTypes.ReserveData storage reserve = reservesData[params.asset];
     DataTypes.ReserveCache memory reserveCache = reserve.cache();
 
@@ -224,7 +224,7 @@ library SupplyLogic {
     mapping(uint8 => DataTypes.EModeCategory) storage eModeCategories,
     mapping(address => DataTypes.UserConfigurationMap) storage usersConfig,
     DataTypes.FinalizeTransferParams memory params
-  ) external {
+  ) internal {
     DataTypes.ReserveData storage reserve = reservesData[params.asset];
 
     // Ensure reserve is not paused
@@ -304,7 +304,7 @@ library SupplyLogic {
     uint256 reservesCount,
     address priceOracle,
     uint8 userEModeCategory
-  ) external {
+  ) internal {
     DataTypes.ReserveData storage reserve = reservesData[asset];
     DataTypes.ReserveCache memory reserveCache = reserve.cache();
 

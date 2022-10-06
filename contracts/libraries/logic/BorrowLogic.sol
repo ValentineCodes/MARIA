@@ -43,7 +43,7 @@ library BorrowLogic {
     address indexed user,
     address indexed repayer,
     uint256 amount,
-    bool useATokens
+    bool useMTokens
   );
   event RebalanceStableBorrowRate(
     address indexed reserve,
@@ -73,7 +73,7 @@ library BorrowLogic {
     mapping(uint8 => DataTypes.EModeCategory) storage eModeCategories,
     DataTypes.UserConfigurationMap storage userConfig,
     DataTypes.ExecuteBorrowParams memory params
-  ) public {
+  ) internal {
     DataTypes.ReserveData storage reserve = reservesData[params.asset];
     DataTypes.ReserveCache memory reserveCache = reserve.cache();
 
@@ -197,7 +197,7 @@ library BorrowLogic {
     mapping(uint256 => address) storage reservesList,
     DataTypes.UserConfigurationMap storage userConfig,
     DataTypes.ExecuteRepayParams memory params
-  ) external returns (uint256) {
+  ) internal returns (uint256) {
     DataTypes.ReserveData storage reserve = reservesData[params.asset];
     DataTypes.ReserveCache memory reserveCache = reserve.cache();
 
@@ -226,7 +226,7 @@ library BorrowLogic {
       : variableDebt;
 
     // Allows a user to repay with aTokens without leaving dust from interest.
-    if (params.useATokens && params.amount == type(uint256).max) {
+    if (params.useMTokens && params.amount == type(uint256).max) {
       params.amount = IMToken(reserveCache.mTokenAddress).balanceOf(msg.sender);
     }
 
@@ -257,7 +257,7 @@ library BorrowLogic {
     reserve.updateInterestRates(
       reserveCache,
       params.asset,
-      params.useATokens ? 0 : paybackAmount,
+      params.useMTokens ? 0 : paybackAmount,
       0
     );
 
@@ -274,7 +274,7 @@ library BorrowLogic {
       paybackAmount
     );
 
-    if (params.useATokens) {
+    if (params.useMTokens) {
       IMToken(reserveCache.mTokenAddress).burn(
         msg.sender,
         reserveCache.mTokenAddress,
@@ -298,7 +298,7 @@ library BorrowLogic {
       params.onBehalfOf,
       msg.sender,
       paybackAmount,
-      params.useATokens
+      params.useMTokens
     );
 
     return paybackAmount;
@@ -317,7 +317,7 @@ library BorrowLogic {
     DataTypes.ReserveData storage reserve,
     address asset,
     address user
-  ) external {
+  ) internal {
     DataTypes.ReserveCache memory reserveCache = reserve.cache();
     reserve.updateState(reserveCache);
 
@@ -363,7 +363,7 @@ library BorrowLogic {
     DataTypes.UserConfigurationMap storage userConfig,
     address asset,
     DataTypes.InterestRateMode interestRateMode
-  ) external {
+  ) internal {
     DataTypes.ReserveCache memory reserveCache = reserve.cache();
 
     reserve.updateState(reserveCache);

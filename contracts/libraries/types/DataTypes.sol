@@ -146,7 +146,7 @@ library DataTypes {
     uint256 amount;
     InterestRateMode interestRateMode;
     address onBehalfOf;
-    bool useATokens;
+    bool useMTokens;
   }
 
   struct ExecuteWithdrawParams {
